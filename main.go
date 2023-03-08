@@ -4,11 +4,13 @@ import (
 	"image/color"
 	"log"
 
+	"github.com/Jack-Craig/gogame/src/gamestate"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Game struct {
-	inited bool
+	inited       bool
+	currentState gamestate.GameState
 }
 
 func (g *Game) init() {
@@ -19,11 +21,13 @@ func (g *Game) Update() error {
 	if !g.inited {
 		g.init()
 	}
+	g.currentState.Update()
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.White)
+	g.currentState.Draw(screen)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
