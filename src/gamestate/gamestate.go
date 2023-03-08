@@ -1,6 +1,7 @@
 package gamestate
 
 import (
+	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -13,6 +14,13 @@ type GameState interface {
 // PLAYSTATE
 type PlayState struct {
 	GameState
+	inited bool
+	gdl    *graphics.GraphicsDataLoader
+	// World (Blocks)
+	// Entities
+	//	- Players
+	//	- Enemies
+	// Inputs
 }
 
 func (ps *PlayState) GetNextState() GameState {
@@ -20,7 +28,14 @@ func (ps *PlayState) GetNextState() GameState {
 }
 
 func (ps *PlayState) Update() {
+	if !ps.inited {
+		ps.init()
+	}
+}
 
+func (ps *PlayState) init() {
+	ps.gdl = graphics.NewGraphicsDataLoader("res/play")
+	ps.inited = true
 }
 
 func (ps *PlayState) Draw(screen *ebiten.Image) {
@@ -33,6 +48,7 @@ type MenuState struct {
 }
 
 func (ms *MenuState) GetNextState() GameState {
+	// TODO: Make Menu. For now, instantly play the game
 	return &PlayState{}
 }
 
