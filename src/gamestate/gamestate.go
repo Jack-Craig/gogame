@@ -48,8 +48,8 @@ type MenuState struct {
 }
 
 func (ms *MenuState) GetNextState() GameState {
-	// TODO: Make Menu. For now, instantly play the game
-	return &PlayState{}
+
+	return nil
 }
 
 func (ms *MenuState) Update() {

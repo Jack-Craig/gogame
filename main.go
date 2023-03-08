@@ -22,6 +22,11 @@ func (g *Game) Update() error {
 		g.init()
 	}
 	g.currentState.Update()
+
+	nextState := g.currentState.GetNextState()
+	if nextState != nil {
+		g.currentState = nextState
+	}
 	return nil
 }
 
