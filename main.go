@@ -1,26 +1,43 @@
 package main
 
 import (
+	"fmt"
+	"image/color"
 	"log"
 
+	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
-type Game struct {}
+type Game struct {
+	inited bool
+}
+
+var (
+	img *ebiten.Image
+)
+
+func (g *Game) init() {
+	g.inited = true
+	gdl := graphics.NewGraphicsDataLoader("res/play")
+	img = gdl.GetSpriteImage(1)
+}
 
 func (g *Game) Update() error {
+	if !g.inited {
+		g.init()
+	}
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	ebitenutil.DebugPrint(screen, "Hello, World!")
+	screen.Fill(color.White)
+	screen.DrawImage(img, &ebiten.DrawImageOptions{})
+	fmt.Println("Draw!")
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	screenWidth = 320
-	screenHeight = 240
-	return
+	return 320, 240
 }
 
 func main() {
