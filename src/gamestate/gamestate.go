@@ -58,11 +58,11 @@ func (ms *MenuState) Update() {
 	if !ms.inited {
 		ms.init()
 	}
-	ms.im.Update()
 }
 
 func (ms *MenuState) init() {
-	ms.im = &input.InputManager{}
+	ms.im = input.NewInputManager()
+	ms.im.InitiateJoyConConnections()
 	ms.inited = true
 }
 
