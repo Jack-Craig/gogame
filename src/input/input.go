@@ -2,6 +2,7 @@ package input
 
 import (
 	"log"
+	"math"
 	"sync"
 
 	"github.com/Jack-Craig/gogame/src/common"
@@ -100,11 +101,17 @@ func (pi *PlayerInput) SetControlState(state joycon.State) {
 	pi.mut.Lock()
 	defer pi.mut.Unlock()
 	if pi.isLeft {
-		pi.xAxis = state.LeftAdj.X
-		pi.yAxis = state.LeftAdj.Y
+		pi.xAxis = -state.LeftAdj.X
+		pi.yAxis = -state.LeftAdj.Y
 	} else {
 		pi.xAxis = state.RightAdj.X
 		pi.yAxis = state.RightAdj.Y
+	}
+	if math.Abs(float64(pi.xAxis)) > 10 || math.Abs(float64(pi.xAxis)) < .1 {
+		pi.xAxis = 0
+	}
+	if math.Abs(float64(pi.yAxis)) > 10 || math.Abs(float64(pi.yAxis)) < .1 {
+		pi.yAxis = 0
 	}
 	pi.buttons = state.Buttons
 }

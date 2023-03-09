@@ -22,7 +22,7 @@ const (
 // Serves requests from sprite_id to spritesheet coordinates
 type GraphicsDataLoader struct {
 	spriteSheet *ebiten.Image
-	spriteMap   map[int]common.Pair
+	spriteMap   map[uint32]common.Pair
 }
 
 func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
@@ -49,18 +49,18 @@ func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
 	spriteMapBytes, _ := ioutil.ReadAll(spriteMapFile)
 	var mapData map[string]common.Pair
 	json.Unmarshal(spriteMapBytes, &mapData)
-	gdl.spriteMap = make(map[int]common.Pair)
+	gdl.spriteMap = make(map[uint32]common.Pair)
 	for spriteId_str, topLeft := range mapData {
 		intVar, err := strconv.Atoi(spriteId_str)
 		if err != nil {
 			log.Fatal(err)
 		}
-		gdl.spriteMap[intVar] = topLeft
+		gdl.spriteMap[uint32(intVar)] = topLeft
 	}
 	return gdl
 }
 
-func (gdl *GraphicsDataLoader) GetSpriteImage(spriteId int) *ebiten.Image {
+func (gdl *GraphicsDataLoader) GetSpriteImage(spriteId uint32) *ebiten.Image {
 	sheetLoc := gdl.spriteMap[spriteId]
 	return gdl.spriteSheet.SubImage(image.Rect(
 		sheetLoc.X*TILESIZE,
