@@ -2,6 +2,7 @@ package gamestate
 
 import (
 	"github.com/Jack-Craig/gogame/src/graphics"
+	"github.com/Jack-Craig/gogame/src/input"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -45,15 +46,24 @@ func (ps *PlayState) Draw(screen *ebiten.Image) {
 // MENUSTATE
 type MenuState struct {
 	GameState
+	inited bool
+	im     *input.InputManager
 }
 
 func (ms *MenuState) GetNextState() GameState {
-
 	return nil
 }
 
 func (ms *MenuState) Update() {
+	if !ms.inited {
+		ms.init()
+	}
+	ms.im.Update()
+}
 
+func (ms *MenuState) init() {
+	ms.im = &input.InputManager{}
+	ms.inited = true
 }
 
 func (ms *MenuState) Draw(screen *ebiten.Image) {
