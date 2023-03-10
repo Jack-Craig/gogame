@@ -16,6 +16,7 @@ const (
 type World struct {
 	gdl           *graphics.GraphicsDataLoader
 	im            *input.InputManager
+	camera        *Camera
 	gameObjects   []*GameObject
 	entityObjects []*Entity
 	playerObjects []*Player
@@ -27,6 +28,7 @@ func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager) *World {
 	w := &World{}
 	w.gdl = gdl
 	w.im = im
+	w.camera = NewCamera(w)
 	for id, playerInput := range *w.im.GetPlayerInputs() {
 		log.Printf("Created player: ID: %d\n", id)
 		p := NewPlayer(1, 50, 1, TILEWIDTH, TILEWIDTH, w, w.gdl.GetSpriteImage(0), playerInput)
@@ -40,6 +42,7 @@ func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager) *World {
 }
 
 func (w *World) Update() {
+	w.camera.Update()
 	for _, player := range w.playerObjects {
 		player.Update()
 	}
@@ -50,6 +53,10 @@ func (w *World) Update() {
 }
 
 func (w *World) Draw(screen *ebiten.Image) {
+	screenBounds := screen.Bounds().Max
+	w.camera.screenWidth = float32(screenBounds.X)
+	w.camera.screenHeight = float32(screenBounds.Y)
+
 	for _, row := range w.worldTiles {
 		for _, tile := range row {
 			tile.GameObject.Draw(screen)
@@ -58,13 +65,14 @@ func (w *World) Draw(screen *ebiten.Image) {
 	for _, gobj := range w.gameObjects {
 		gobj.Draw(screen)
 	}
+	w.camera.Draw(screen)
 }
 
 func (w *World) generateWorld() {
 	for y := float32(0); y < 30; y++ {
 		var row []*Tile
 		for x := float32(0); x < 90; x++ {
-			if y == 14 || y > 28 && uint32(x)&5 == 0 || y > 25 && uint32(x)&8 == 0 {
+			if y == 29 || y > 28 && uint32(x)&5 == 0 || y > 25 && uint32(x)&8 == 0 {
 				im := w.gdl.GetSpriteImage(2)
 				t := NewTile(2, x*TILEWIDTH, y*TILEWIDTH, w, im)
 				row = append(row, t)
@@ -90,7 +98,6 @@ func (w *World) IsWorldCollision(x, y float32) bool {
 	if gridX < 0 || gridX >= len(w.worldTiles[0]) {
 		return false
 	}
-	log.Printf("GridX: %d, GridY: %d\n", gridX, gridY)
 	tile := w.worldTiles[gridY][gridX]
 	return !tile.isPassable
 }

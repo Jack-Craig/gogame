@@ -20,9 +20,11 @@ func NewGameObject(id uint32, x, y, width, height float32, w *World, im *ebiten.
 }
 
 func (gobj *GameObject) Draw(screen *ebiten.Image) {
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(gobj.x), float64(gobj.y))
-	screen.DrawImage(gobj.im, op)
+	op := ebiten.DrawImageOptions{}
+	geo := gobj.w.camera.GetRenderOffset()
+	geo.Translate(float64(gobj.x), float64(gobj.y))
+	op.GeoM = geo
+	screen.DrawImage(gobj.im, &op)
 }
 
 // Tiles are game objects with collision, the world is made of tiles
@@ -41,7 +43,8 @@ func NewTile(id uint32, x, y float32, w *World, im *ebiten.Image) *Tile {
 // Entities are similar to game objects but also have movement
 type Entity struct {
 	GameObject
-	vx, vy float32
+	vx, vy           float32
+	stayWithinCamera bool
 }
 
 func (e *Entity) Update() {
@@ -56,13 +59,16 @@ func (e *Entity) Update() {
 	} else if e.vy < 0 && e.vy < -MAXVEL {
 		e.vy = -MAXVEL
 	}
-
 	// World collision
 	expectedX := e.x + e.vx
 	if e.vx > 0 {
 		expectedX += e.width
 	}
-	if e.w.IsWorldCollision(expectedX, e.y) || e.w.IsWorldCollision(expectedX, e.y+e.height) {
+	collisionX := e.w.IsWorldCollision(expectedX, e.y) || e.w.IsWorldCollision(expectedX, e.y+e.height)
+	if e.stayWithinCamera {
+		collisionX = collisionX || !e.w.camera.IsInsideCamera(expectedX, e.y) || !e.w.camera.IsInsideCamera(expectedX, e.y+e.height)
+	}
+	if collisionX {
 		e.vx = 0
 	} else {
 		e.x += e.vx
@@ -71,7 +77,11 @@ func (e *Entity) Update() {
 	if e.vy > 0 {
 		expectedY += e.height
 	}
-	if e.w.IsWorldCollision(e.x, expectedY) || e.w.IsWorldCollision(e.x+e.width, expectedY) {
+	collisionY := e.w.IsWorldCollision(e.x, expectedY) || e.w.IsWorldCollision(e.x+e.width, expectedY)
+	if e.stayWithinCamera {
+		collisionY = collisionY || !e.w.camera.IsInsideCamera(e.x, expectedY) || !e.w.camera.IsInsideCamera(e.x+e.width, expectedY)
+	}
+	if collisionY {
 		e.vy = 0
 	} else {
 		e.y += e.vy
@@ -96,8 +106,9 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 			GameObject: GameObject{
 				id, x, y, width, height, im, w,
 			},
-			vx: 0,
-			vy: 0,
+			vx:               0,
+			vy:               0,
+			stayWithinCamera: true,
 		},
 		pi: pip,
 	}
