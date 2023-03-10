@@ -29,8 +29,18 @@ func (c *Camera) Update() {
 		totalX += player.x + player.width/2
 		totalY += player.y + player.height/2
 	}
-	c.offX = -totalX/float32(len(c.w.playerObjects)) + c.screenWidth/2
+	newXOffset := -totalX/float32(len(c.w.playerObjects)) + c.screenWidth/2
+	//newYOffset := -totalY/float32(len(c.w.playerObjects)) + c.screenHeight/2
+	// Only able to move right
+	if newXOffset < c.offX {
+		c.offX = newXOffset
+	}
 	c.offY = -totalY/float32(len(c.w.playerObjects)) + c.screenHeight/2
+	/**
+	if newYOffset > c.offY {
+
+	}
+	*/
 }
 
 // Returns a copy of the render transformation matrix
