@@ -1,6 +1,7 @@
 package gameplay
 
 import (
+	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/Jack-Craig/gogame/src/input"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -21,9 +22,10 @@ func NewGameObject(id uint32, x, y, width, height float32, w *World, im *ebiten.
 
 func (gobj *GameObject) Draw(screen *ebiten.Image) {
 	op := ebiten.DrawImageOptions{}
-	geo := gobj.w.camera.GetRenderOffset()
-	geo.Translate(float64(gobj.x), float64(gobj.y))
-	op.GeoM = geo
+	camOffX, camOffY := gobj.w.camera.GetRenderOffset()
+	op.GeoM.Scale(float64(gobj.width/float32(graphics.TILESIZE)), float64(float32(gobj.height/graphics.TILESIZE)))
+	op.GeoM.Translate(float64(camOffX), float64(camOffY))
+	op.GeoM.Translate(float64(gobj.x), float64(gobj.y))
 	screen.DrawImage(gobj.im, &op)
 }
 
@@ -119,6 +121,6 @@ func (p *Player) Update() {
 	var magn float32 = 5
 	p.vx = magn * xAxis
 	if p.pi.IsButtonPressed(input.JoyConB) && p.w.IsWorldCollision(p.x, p.y+p.height+5) {
-		p.vy -= 8
+		p.vy -= 8.5
 	}
 }

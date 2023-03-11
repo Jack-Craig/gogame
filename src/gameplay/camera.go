@@ -1,22 +1,17 @@
 package gameplay
 
 import (
-	"image/color"
-
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
 
 type Camera struct {
 	w                                     *World
 	offX, offY, screenWidth, screenHeight float32
-	geo                                   *ebiten.GeoM
 }
 
 func NewCamera(w *World) *Camera {
 	return &Camera{
-		w:   w,
-		geo: &ebiten.GeoM{},
+		w: w,
 	}
 }
 
@@ -35,7 +30,7 @@ func (c *Camera) Update() {
 	if newXOffset < c.offX {
 		c.offX = newXOffset
 	}
-	c.offY = -totalY/float32(len(c.w.playerObjects)) + c.screenHeight/2
+	c.offY = -totalY/float32(len(c.w.playerObjects)) + c.screenHeight*2/3
 	/**
 	if newYOffset > c.offY {
 
@@ -44,10 +39,8 @@ func (c *Camera) Update() {
 }
 
 // Returns a copy of the render transformation matrix
-func (c *Camera) GetRenderOffset() ebiten.GeoM {
-	c.geo.Reset()
-	c.geo.Translate(float64(c.offX), float64(c.offY))
-	return *c.geo
+func (c *Camera) GetRenderOffset() (float32, float32) {
+	return c.offX, c.offY
 }
 
 // Returns true if the coordinates are within the camera bounds
@@ -56,9 +49,12 @@ func (c *Camera) IsInsideCamera(x, y float32) bool {
 	topLeftY := -c.offY
 	bottomRightX := -c.offX + c.screenWidth
 	bottomRightY := -c.offY + c.screenHeight
+	if y == -1 {
+		return !(x < topLeftX || x > bottomRightX)
+	}
 	return !(x < topLeftX || x > bottomRightX || y < topLeftY || y > bottomRightY)
 }
 
 func (c *Camera) Draw(screen *ebiten.Image) {
-	ebitenutil.DrawCircle(screen, float64(c.screenWidth/2), float64(c.screenHeight/2), 5, color.White)
+
 }

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	TILESIZE = 32
+	TILESIZE = 16
 )
 
 // Loads buffered sprite sheet into memory
