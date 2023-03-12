@@ -50,6 +50,9 @@ type Entity struct {
 	health           float32
 	// Maintained by world every Update()
 	collidingEntities []*Entity
+	// Damage to give other entities on contact
+	// Usually 0
+	damage float32
 }
 
 func (e *Entity) Update() {
@@ -120,10 +123,28 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 }
 
 func (p *Player) Update() {
-	_, xAxis := p.pi.GetAxes()
-	var magn float32 = 5
-	p.vx = magn * xAxis
+	if !p.pi.IsButtonPressed(input.JoyConTriggerLeft) {
+		_, xAxis := p.pi.GetAxes()
+		var magn float32 = 5
+		p.vx = magn * xAxis
+	} else {
+		p.vx = 0
+	}
 	if p.pi.IsButtonPressed(input.JoyConB) && (p.w.IsWorldCollision(p.x, p.y+p.height+2) || p.w.IsWorldCollision(p.x+p.width, p.y+p.height+2)) {
 		p.vy -= 8.5
+	}
+
+	if p.pi.IsButtonPressed(input.JoyConA) {
+		yAx, xAx := p.pi.GetAxes()
+		bullet := &Entity{}
+		bullet.x = p.x
+		bullet.y = p.y
+		bullet.vx = xAx * 50
+		bullet.vy = yAx * 50
+		bullet.width = 10
+		bullet.height = 10
+		bullet.im = p.w.gdl.GetSpriteImage(1)
+		bullet.damage = 10
+		p.w.AddEntity(bullet)
 	}
 }
