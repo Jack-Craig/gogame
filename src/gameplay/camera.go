@@ -25,7 +25,6 @@ func (c *Camera) Update() {
 		totalY += player.y + player.height/2
 	}
 	newXOffset := -totalX/float32(len(c.w.playerObjects)) + c.screenWidth/2
-	//newYOffset := -totalY/float32(len(c.w.playerObjects)) + c.screenHeight/2
 	// Only able to move right
 	if newXOffset < c.offX {
 		c.offX = newXOffset

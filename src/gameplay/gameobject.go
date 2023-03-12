@@ -50,9 +50,6 @@ type Entity struct {
 	health           float32
 	// Maintained by world every Update()
 	collidingEntities []*Entity
-	// Damage to give other entities on contact
-	// Usually 0
-	damage float32
 }
 
 func (e *Entity) Update() {
@@ -144,7 +141,6 @@ func (p *Player) Update() {
 		bullet.width = 10
 		bullet.height = 10
 		bullet.im = p.w.gdl.GetSpriteImage(1)
-		bullet.damage = 10
 		p.w.AddEntity(bullet)
 	}
 }

@@ -96,9 +96,7 @@ func (w *World) Update() {
 			isCollision = isCollision || (ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height)
 			if isCollision {
 				ei.collidingEntities = append(ei.collidingEntities, ej)
-				ei.health -= ej.damage
 				ej.collidingEntities = append(ej.collidingEntities, ei)
-				ej.health -= ei.damage
 			}
 		}
 	}
