@@ -101,3 +101,20 @@ func (gdl *GraphicsDataLoader) GetSpriteImage(spriteId uint32) *ebiten.Image {
 func (gdl *GraphicsDataLoader) GetFont() *font.Face {
 	return &gdl.font
 }
+
+func (gdl *GraphicsDataLoader) GetBackgroundImages() (*ebiten.Image, *ebiten.Image, *ebiten.Image) {
+	bg_width := 240
+	bg_height := 160
+	spriteImageFile, err := os.Open("res/background/sheet.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer spriteImageFile.Close()
+	spriteImage, _, err := image.Decode(spriteImageFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	sheet := ebiten.NewImageFromImage(spriteImage)
+	return sheet.SubImage(image.Rect(0, 0, bg_width, bg_height)).(*ebiten.Image), sheet.SubImage(image.Rect(0, bg_height, bg_width, 2*bg_height)).(*ebiten.Image), sheet.SubImage(image.Rect(0, 2*bg_height, bg_width, 3*bg_height)).(*ebiten.Image)
+
+}

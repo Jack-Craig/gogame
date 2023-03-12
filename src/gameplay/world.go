@@ -39,6 +39,7 @@ type World struct {
 	gravity       float32
 	worldTiles    [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
 	inited        bool
+	bg            *Background
 
 	level *Level
 }
@@ -58,6 +59,7 @@ func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager) *World {
 		playerInfo := &PlayerInfo{p}
 		w.playerInfos = append(w.playerInfos, playerInfo)
 	}
+	w.bg = NewBackground(w)
 	w.gravity = .25
 	w.generateLevel()
 	w.inited = true
@@ -110,10 +112,12 @@ func (w *World) Draw(screen *ebiten.Image) {
 	if !w.inited {
 		return
 	}
+	screen.Fill(color.RGBA{135, 205, 235, 255})
 	screenBounds := screen.Bounds().Max
 	w.camera.screenWidth = float32(screenBounds.X)
 	w.camera.screenHeight = float32(screenBounds.Y)
-	if w.level.worldFrameStart > w.level.worldFrameEnd {
+	w.bg.Draw(screen)
+	if w.level.worldFrameStart > (w.level.worldFrameEnd+1)%WORLDBUFFERLEN {
 		for x := uint32(0); x < w.level.worldFrameEnd; x++ {
 			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 				w.worldTiles[y][x].Draw(screen)
@@ -125,7 +129,7 @@ func (w *World) Draw(screen *ebiten.Image) {
 			}
 		}
 	} else {
-		for x := w.level.worldFrameStart; x <= w.level.worldFrameEnd; x++ {
+		for x := w.level.worldFrameStart; x <= w.level.worldFrameEnd+1; x++ {
 			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 				w.worldTiles[y][x].Draw(screen)
 			}
