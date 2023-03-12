@@ -1,13 +1,15 @@
 package gameplay
 
 import (
-	"log"
+	"fmt"
+	"image/color"
 	"math/rand"
 
 	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/Jack-Craig/gogame/src/input"
 	"github.com/aquilax/go-perlin"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
 const (
@@ -33,6 +35,7 @@ type World struct {
 	gameObjects   []*GameObject
 	entityObjects []*Entity
 	playerObjects []*Player
+	playerInfos   []*PlayerInfo
 	gravity       float32
 	worldTiles    [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
 	inited        bool
@@ -46,11 +49,14 @@ func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager) *World {
 	w.im = im
 	w.camera = NewCamera(w)
 	for id, playerInput := range *w.im.GetPlayerInputs() {
-		log.Printf("Created player: ID: %d\n", id)
-		p := NewPlayer(1, PLAYERWORLDSTARTX, PLAYERWORLDSTARTY, TILEWIDTH, TILEWIDTH, w, w.gdl.GetSpriteImage(4), playerInput)
+		p := NewPlayer(id+1, PLAYERWORLDSTARTX, PLAYERWORLDSTARTY, TILEWIDTH, TILEWIDTH, w, w.gdl.GetSpriteImage(4), playerInput)
+		p.health = 100
 		w.gameObjects = append(w.gameObjects, &p.GameObject)
 		w.entityObjects = append(w.entityObjects, &p.Entity)
 		w.playerObjects = append(w.playerObjects, p)
+
+		playerInfo := &PlayerInfo{p}
+		w.playerInfos = append(w.playerInfos, playerInfo)
 	}
 	w.gravity = .25
 	w.generateLevel()
@@ -123,6 +129,12 @@ func (w *World) Draw(screen *ebiten.Image) {
 	for _, gobj := range w.gameObjects {
 		gobj.Draw(screen)
 	}
+	for _, playerObj := range w.playerObjects {
+		playerObj.Draw(screen)
+	}
+	for _, playerInfo := range w.playerInfos {
+		playerInfo.Draw(screen)
+	}
 	w.camera.Draw(screen)
 }
 
@@ -144,6 +156,28 @@ func (w *World) worldToBuffer(x, y float32) (uint32, uint32) {
 	gridX := uint32(x / TILEWIDTH)
 	bufferX := gridX % WORLDBUFFERLEN
 	return bufferX, bufferY
+}
+
+type PlayerInfo struct {
+	player *Player
+}
+
+func (pi *PlayerInfo) Draw(screen *ebiten.Image) {
+	renderY := int(pi.player.w.camera.screenHeight)
+	renderX := int(pi.player.w.camera.screenWidth * (float32(pi.player.id) / float32(len(pi.player.w.playerObjects)+1)))
+
+	statusText := fmt.Sprintf("%0.f", pi.player.health)
+	boxSize := text.BoundString(*pi.player.w.gdl.GetFont(), statusText)
+	width := boxSize.Max.X - boxSize.Min.X
+	height := boxSize.Max.Y - boxSize.Min.Y
+	text.Draw(screen, statusText, *pi.player.w.gdl.GetFont(), renderX-width/2, renderY-height/2, color.White)
+
+	op := ebiten.DrawImageOptions{}
+	scale := float64(height) / float64(graphics.TILESIZE)
+	scale *= 1.2
+	op.GeoM.Scale(scale, scale)
+	op.GeoM.Translate(float64(renderX)-scale*float64(graphics.TILESIZE)-float64(width)/2-10, float64(renderY-height)-scale*float64(graphics.TILESIZE)/2)
+	screen.DrawImage(pi.player.im, &op)
 }
 
 // Levels, Biomes, and TileChunks handle world generation
@@ -229,12 +263,12 @@ func (l *Level) Update() {
 
 func (l *Level) checkWorldUpdate() {
 	// Check if we should generate more shit
-
+	floorBase := uint32(2.0 / 3 * float64(WORLDBUFFERHEIGHT))
 	for (l.worldFrameStart+WORLDGENBUFFERLEN)%WORLDBUFFERLEN != l.worldGeneratedEnd%WORLDBUFFERLEN {
 		arrX := l.worldGeneratedEnd
 		worldX := uint32(l.world.worldTiles[0][l.worldGeneratedEnd].x)
 		rawY := l.perlin.Noise1D(float64(worldX) / float64(TILEWIDTH*15))
-		groundY := (WORLDBUFFERHEIGHT - uint32(rawY*10)) - 5
+		groundY := floorBase + uint32(rawY*15)
 		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 			if y == groundY {
 				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(3)

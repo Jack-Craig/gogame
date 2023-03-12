@@ -10,7 +10,11 @@ import (
 	"strconv"
 
 	"github.com/Jack-Craig/gogame/src/common"
+	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 const (
@@ -23,6 +27,7 @@ const (
 type GraphicsDataLoader struct {
 	spriteSheet *ebiten.Image
 	spriteMap   map[uint32]common.Pair
+	font        font.Face
 }
 
 func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
@@ -57,6 +62,29 @@ func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
 		}
 		gdl.spriteMap[uint32(intVar)] = topLeft
 	}
+	// Load font
+	/**
+	fontFile, err := os.Open("res/font.ttf")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer fontFile.Close()
+	fontBytes, _ := ioutil.ReadAll(spriteMapFile)
+	parsedFont, err := opentype.Parse(fontBytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	*/
+	parsedFont, _ := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	font, err := opentype.NewFace(parsedFont, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	gdl.font = text.FaceWithLineHeight(font, 54)
 	return gdl
 }
 
@@ -68,4 +96,8 @@ func (gdl *GraphicsDataLoader) GetSpriteImage(spriteId uint32) *ebiten.Image {
 		(sheetLoc.X+1)*TILESIZE,
 		(sheetLoc.Y+1)*TILESIZE,
 	)).(*ebiten.Image)
+}
+
+func (gdl *GraphicsDataLoader) GetFont() *font.Face {
+	return &gdl.font
 }
