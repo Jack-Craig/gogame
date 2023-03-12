@@ -47,6 +47,9 @@ type Entity struct {
 	GameObject
 	vx, vy           float32
 	stayWithinCamera bool
+	health           float32
+	// Maintained by world every Update()
+	collidingEntities []*Entity
 }
 
 func (e *Entity) Update() {

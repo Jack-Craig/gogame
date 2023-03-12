@@ -72,6 +72,25 @@ func (w *World) Update() {
 	for _, entity := range w.entityObjects {
 		entity.AddVel(0, w.gravity)
 		entity.Update()
+		entity.collidingEntities = nil
+	}
+	for i := 0; i < len(w.entityObjects); i++ {
+		ei := w.entityObjects[i]
+		for j := i + 1; j < len(w.entityObjects); j++ {
+			ej := w.entityObjects[j]
+			// Top left
+			isCollision := ei.x >= ej.x && ei.x <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height
+			// Top right
+			isCollision = isCollision || (ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height)
+			// Bottom left
+			isCollision = isCollision || (ei.x > ej.x && ei.x <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height)
+			// Bottom right
+			isCollision = isCollision || (ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height)
+			if isCollision {
+				ei.collidingEntities = append(ei.collidingEntities, ej)
+				ej.collidingEntities = append(ej.collidingEntities, ei)
+			}
+		}
 	}
 }
 
@@ -82,12 +101,25 @@ func (w *World) Draw(screen *ebiten.Image) {
 	screenBounds := screen.Bounds().Max
 	w.camera.screenWidth = float32(screenBounds.X)
 	w.camera.screenHeight = float32(screenBounds.Y)
-
-	for _, row := range w.worldTiles {
-		for _, tile := range row {
-			tile.GameObject.Draw(screen)
+	if w.level.worldFrameStart > w.level.worldFrameEnd {
+		for x := uint32(0); x < w.level.worldFrameEnd; x++ {
+			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
+				w.worldTiles[y][x].Draw(screen)
+			}
+		}
+		for x := w.level.worldFrameEnd; x < WORLDBUFFERLEN; x++ {
+			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
+				w.worldTiles[y][x].Draw(screen)
+			}
+		}
+	} else {
+		for x := w.level.worldFrameStart; x <= w.level.worldFrameEnd; x++ {
+			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
+				w.worldTiles[y][x].Draw(screen)
+			}
 		}
 	}
+
 	for _, gobj := range w.gameObjects {
 		gobj.Draw(screen)
 	}
@@ -161,32 +193,9 @@ func NewLevel(world *World) *Level {
 
 func (l *Level) initWorld() {
 	for x := uint32(0); x < WORLDBUFFERLEN; x++ {
-		rawY := l.perlin.Noise1D(float64(x) / 10)
-		groundY := (WORLDBUFFERHEIGHT - uint32(rawY*10)) - 5
-		log.Printf("GroundY: %f, %d, %d\n", rawY, groundY, x)
 		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
-			if x == 0 {
-				t := NewTile(10, float32(x)*TILEWIDTH, float32(y)*TILEWIDTH, l.world, l.world.gdl.GetSpriteImage(6))
-				t.isPassable = true
-				l.world.worldTiles[y][x] = t
-				continue
-			}
-			if y == groundY {
-				t := NewTile(10, float32(x)*TILEWIDTH, float32(y)*TILEWIDTH, l.world, l.world.gdl.GetSpriteImage(3))
-				t.isPassable = false
-				l.world.worldTiles[y][x] = t
-			} else if y > groundY {
-				t := NewTile(10, float32(x)*TILEWIDTH, float32(y)*TILEWIDTH, l.world, l.world.gdl.GetSpriteImage(1))
-				t.isPassable = false
-				l.world.worldTiles[y][x] = t
-			} else {
-				t := NewTile(10, float32(x)*TILEWIDTH, float32(y)*TILEWIDTH, l.world, l.world.gdl.GetSpriteImage(6))
-				t.isPassable = true
-				l.world.worldTiles[y][x] = t
-			}
+			l.world.worldTiles[y][x] = NewTile(0, float32(x*uint32(TILEWIDTH)), float32(y*uint32(TILEWIDTH)), l.world, nil)
 		}
-		l.worldGeneratedEnd++
-		l.worldGeneratedEnd %= WORLDBUFFERLEN
 	}
 }
 
@@ -194,6 +203,7 @@ func (l *Level) Update() {
 	// Update ring offets
 	if l.world.camera.screenWidth > 0 && l.worldFrameEnd == 0 {
 		l.worldFrameEnd = l.worldFrameStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
+		l.worldFrameEnd %= WORLDBUFFERLEN
 	}
 	if l.world.camera.screenWidth > 0 && !l.world.camera.IsInsideCamera(l.worldXStart+TILEWIDTH, -1) {
 		// Need to advance world buffer
@@ -223,7 +233,7 @@ func (l *Level) checkWorldUpdate() {
 	for (l.worldFrameStart+WORLDGENBUFFERLEN)%WORLDBUFFERLEN != l.worldGeneratedEnd%WORLDBUFFERLEN {
 		arrX := l.worldGeneratedEnd
 		worldX := uint32(l.world.worldTiles[0][l.worldGeneratedEnd].x)
-		rawY := l.perlin.Noise1D(float64(worldX) / float64(TILEWIDTH*10))
+		rawY := l.perlin.Noise1D(float64(worldX) / float64(TILEWIDTH*15))
 		groundY := (WORLDBUFFERHEIGHT - uint32(rawY*10)) - 5
 		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 			if y == groundY {
