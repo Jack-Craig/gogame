@@ -3,6 +3,7 @@ module github.com/Jack-Craig/gogame
 go 1.23
 
 require (
+	github.com/aquilax/go-perlin v1.1.0 // indirect
 	github.com/ebitengine/purego v0.0.0-20220905075623-aeed57cda744 // indirect
 	github.com/flynn/hid v0.0.0-20190502022136-f1b9b6cc019a // indirect
 	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220806181222-55e207c401ad // indirect

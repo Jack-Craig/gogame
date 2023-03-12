@@ -120,7 +120,7 @@ func (p *Player) Update() {
 	_, xAxis := p.pi.GetAxes()
 	var magn float32 = 5
 	p.vx = magn * xAxis
-	if p.pi.IsButtonPressed(input.JoyConB) && p.w.IsWorldCollision(p.x, p.y+p.height+5) {
+	if p.pi.IsButtonPressed(input.JoyConB) && (p.w.IsWorldCollision(p.x, p.y+p.height+2) || p.w.IsWorldCollision(p.x+p.width, p.y+p.height+2)) {
 		p.vy -= 8.5
 	}
 }

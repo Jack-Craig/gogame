@@ -1,4 +1,6 @@
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
+github.com/aquilax/go-perlin v1.1.0 h1:Gg+3jQ24wT4Y5GI7TCRLmYarzUG0k+n/JATFqOimb7s=
+github.com/aquilax/go-perlin v1.1.0/go.mod h1:z9Rl7EM4BZY0Ikp2fEN1I5mKSOJ26HQpk0O2TBdN2HE=
 github.com/ebitengine/purego v0.0.0-20220905075623-aeed57cda744 h1:A8UnJ/5OKzki4HBDwoRQz7I6sxKsokpMXcGh+fUxpfc=
 github.com/ebitengine/purego v0.0.0-20220905075623-aeed57cda744/go.mod h1:Eh8I3yvknDYZeCuXH9kRNaPuHEwvXDCk378o9xszmHg=
 github.com/flynn/hid v0.0.0-20190502022136-f1b9b6cc019a h1:fsyWnwbywFpHJS4T55vDW+UUeWP2WomJbB45/jf4If4=
