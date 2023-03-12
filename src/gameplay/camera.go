@@ -30,12 +30,11 @@ func (c *Camera) Update() {
 	if newXOffset < c.offX {
 		c.offX = newXOffset
 	}
-	c.offY = -totalY/float32(len(c.w.playerObjects)) + c.screenHeight*2/3
-	/**
-	if newYOffset > c.offY {
-
+	newYOffset := -totalY/float32(len(c.w.playerObjects)) + c.screenHeight*2/3
+	if !c.IsInsideCamera(-c.offX+c.screenWidth/2, -newYOffset+c.screenWidth*1/3) {
+		c.offY = newYOffset
 	}
-	*/
+
 }
 
 // Returns a copy of the render transformation matrix
@@ -56,5 +55,4 @@ func (c *Camera) IsInsideCamera(x, y float32) bool {
 }
 
 func (c *Camera) Draw(screen *ebiten.Image) {
-
 }

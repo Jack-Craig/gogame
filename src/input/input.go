@@ -107,10 +107,10 @@ func (pi *PlayerInput) SetControlState(state joycon.State) {
 		pi.xAxis = state.RightAdj.X
 		pi.yAxis = state.RightAdj.Y
 	}
-	if math.Abs(float64(pi.xAxis)) > 10 || math.Abs(float64(pi.xAxis)) < .05 {
+	if math.Abs(float64(pi.xAxis)) > 100 || math.Abs(float64(pi.xAxis)) < .04 {
 		pi.xAxis = 0
 	}
-	if math.Abs(float64(pi.yAxis)) > 10 || math.Abs(float64(pi.yAxis)) < .05 {
+	if math.Abs(float64(pi.yAxis)) > 100 || math.Abs(float64(pi.yAxis)) < .04 {
 		pi.yAxis = 0
 	}
 	pi.buttons = state.Buttons

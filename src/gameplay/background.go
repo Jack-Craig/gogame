@@ -24,10 +24,10 @@ func NewBackground(world *World) *Background {
 }
 
 func (bg *Background) Draw(screen *ebiten.Image) {
-	sizeScale := bg.world.camera.screenHeight / (bg.height * 2)
+	sizeScale := bg.world.camera.screenHeight / bg.height
 	newWidth := sizeScale * bg.width
 	newHeight := sizeScale * bg.height
-	requiredTiles := 2 * bg.world.camera.screenWidth / newWidth
+	requiredTiles := 3 * bg.world.camera.screenWidth / newWidth
 
 	cOffX := bg.world.camera.offX
 	cOffY := bg.world.camera.offY
