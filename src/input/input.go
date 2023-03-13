@@ -70,16 +70,13 @@ func (im *InputManager) pairJoyCon(device *hid.DeviceInfo, id *uint32, isLeft bo
 	if err != nil {
 		log.Fatalln(err)
 	}
+	jc.SendRumble(joycon.RumbleSet{{40, 16, 10, 32}})
 	playerInput := &PlayerInput{
-		id:     *id,
-		isLeft: isLeft,
+		id: *id,
+		jc: jc,
 	}
 	im.playerInputs[*id] = playerInput
-	go func(joycon *joycon.Joycon, pi *PlayerInput) {
-		for {
-			pi.SetControlState(<-joycon.State())
-		}
-	}(jc, playerInput)
+	playerInput.start()
 	*id++
 }
 
@@ -92,7 +89,7 @@ func (im *InputManager) GetPlayerInputs() *map[uint32]*PlayerInput {
 type PlayerInput struct {
 	mut          sync.Mutex
 	id           uint32
-	isLeft       bool
+	jc           *joycon.Joycon
 	xAxis, yAxis float32
 	buttons      uint32
 }
@@ -100,7 +97,7 @@ type PlayerInput struct {
 func (pi *PlayerInput) SetControlState(state joycon.State) {
 	pi.mut.Lock()
 	defer pi.mut.Unlock()
-	if pi.isLeft {
+	if pi.jc.IsLeft() {
 		pi.xAxis = -state.LeftAdj.X
 		pi.yAxis = -state.LeftAdj.Y
 	} else {
@@ -116,6 +113,14 @@ func (pi *PlayerInput) SetControlState(state joycon.State) {
 	pi.buttons = state.Buttons
 }
 
+func (pi *PlayerInput) start() {
+	go func() {
+		for {
+			pi.SetControlState(<-pi.jc.State())
+		}
+	}()
+}
+
 func (pi *PlayerInput) GetAxes() (float32, float32) {
 	pi.mut.Lock()
 	defer pi.mut.Unlock()
@@ -127,4 +132,8 @@ func (pi *PlayerInput) IsButtonPressed(button JoyConButton) bool {
 	defer pi.mut.Unlock()
 	mapPair := maskMap[button]
 	return (uint32(mapPair.X)&pi.buttons) != 0 || (uint32(mapPair.Y)&pi.buttons) != 0
+}
+
+func (pi *PlayerInput) SendRumble() {
+	pi.jc.SendRumble(joycon.RumbleSet{{40, 16, 10, 32}})
 }

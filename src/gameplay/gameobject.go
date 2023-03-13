@@ -1,6 +1,8 @@
 package gameplay
 
 import (
+	"time"
+
 	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/Jack-Craig/gogame/src/input"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -108,6 +110,10 @@ func (e *Entity) AddVel(dx, dy float32) {
 type Player struct {
 	Entity
 	pi *input.PlayerInput
+
+	// TOOD: Move to gun struct
+	fireRate     int64 // Milliseconds
+	lastShotTime int64 // millseconds
 }
 
 func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Image, pip *input.PlayerInput) *Player {
@@ -121,7 +127,8 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 			stayWithinCamera:  true,
 			gravityMultiplier: 1,
 		},
-		pi: pip,
+		pi:       pip,
+		fireRate: 150,
 	}
 }
 
@@ -138,8 +145,17 @@ func (p *Player) Update() {
 	}
 
 	if p.pi.IsButtonPressed(input.JoyConA) {
-		bullet := NewBullet(p.x, p.y, 30, 0, 10, p.w)
-		p.w.AddProjectile(bullet)
+		p.Shoot()
+	}
+}
+
+// TOOD: Move to gun object
+func (p *Player) Shoot() {
+	curTime := time.Now().UnixMilli()
+	if p.lastShotTime < curTime-p.fireRate {
+		p.lastShotTime = curTime
+		p := NewBullet(p.x, p.y+p.height/3, 12, 0, 10, p.w)
+		p.w.AddProjectile(p)
 	}
 }
 
@@ -165,5 +181,5 @@ func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *Wo
 }
 
 func NewBullet(x, y, vx, vy, damage float32, w *World) *Projectile {
-	return NewProjectile(0, x, y, 50, 20, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
+	return NewProjectile(0, x, y, 15, 10, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
 }
