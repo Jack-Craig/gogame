@@ -110,9 +110,10 @@ func (w *World) Update() {
 		}
 	}
 	for i, projectile := range w.projectiles {
-		if projectile.vx == 0 {
-			projectile.shouldRemove = true
+		projectile.Update()
+		if projectile.shouldRemove {
 			common.Remove(w.projectiles, i)
+			continue
 		}
 	}
 }

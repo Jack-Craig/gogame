@@ -1,6 +1,7 @@
 package gameplay
 
 import (
+	"math"
 	"time"
 
 	"github.com/Jack-Craig/gogame/src/graphics"
@@ -15,11 +16,12 @@ type GameObject struct {
 	im                  *ebiten.Image
 	w                   *World
 	shouldRemove        bool
+	theta               float64
 }
 
 func NewGameObject(id uint32, x, y, width, height float32, w *World, im *ebiten.Image) *GameObject {
 	return &GameObject{
-		id, x, y, width, height, im, w, false,
+		id, x, y, width, height, im, w, false, 0,
 	}
 }
 
@@ -31,6 +33,9 @@ func (gobj *GameObject) Draw(screen *ebiten.Image) {
 	camOffX, camOffY := gobj.w.camera.GetRenderOffset()
 	w, h := gobj.im.Size()
 	op.GeoM.Scale(float64(gobj.width/float32(w)), float64(float32(gobj.height/float32(h))))
+
+	op.GeoM.Rotate(gobj.theta)
+
 	op.GeoM.Translate(float64(camOffX), float64(camOffY))
 	op.GeoM.Translate(float64(gobj.x), float64(gobj.y))
 	screen.DrawImage(gobj.im, &op)
@@ -44,7 +49,7 @@ type Tile struct {
 
 func NewTile(id uint32, x, y float32, w *World, im *ebiten.Image) *Tile {
 	return &Tile{
-		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false},
+		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false, 0},
 		false,
 	}
 }
@@ -76,7 +81,7 @@ func (e *Entity) Update() {
 	if e.vx > 0 {
 		expectedX += e.width
 	}
-	collisionX := e.w.IsWorldCollision(expectedX, e.y) || e.w.IsWorldCollision(expectedX, e.y+e.height)
+	collisionX, collisionY := e.WillCollideWithWorld()
 	if e.stayWithinCamera {
 		collisionX = collisionX || !e.w.camera.IsInsideCamera(expectedX, e.y) || !e.w.camera.IsInsideCamera(expectedX, e.y+e.height)
 	}
@@ -89,7 +94,6 @@ func (e *Entity) Update() {
 	if e.vy > 0 {
 		expectedY += e.height
 	}
-	collisionY := e.w.IsWorldCollision(e.x, expectedY) || e.w.IsWorldCollision(e.x+e.width, expectedY)
 	if e.stayWithinCamera {
 		collisionY = collisionY || !e.w.camera.IsInsideCamera(e.x, expectedY) || !e.w.camera.IsInsideCamera(e.x+e.width, expectedY)
 	}
@@ -98,7 +102,20 @@ func (e *Entity) Update() {
 	} else {
 		e.y += e.vy
 	}
+}
 
+func (e *Entity) WillCollideWithWorld() (bool, bool) {
+	expectedX := e.x + e.vx
+	if e.vx > 0 {
+		expectedX += e.width
+	}
+	collisionX := e.w.IsWorldCollision(expectedX, e.y) || e.w.IsWorldCollision(expectedX, e.y+e.height)
+	expectedY := e.y + e.vy
+	if e.vy > 0 {
+		expectedY += e.height
+	}
+	collisionY := e.w.IsWorldCollision(e.x, expectedY) || e.w.IsWorldCollision(e.x+e.width, expectedY)
+	return collisionX, collisionY
 }
 
 func (e *Entity) AddVel(dx, dy float32) {
@@ -120,7 +137,7 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 	return &Player{
 		Entity: Entity{
 			GameObject: GameObject{
-				id, x, y, width, height, im, w, false,
+				id, x, y, width, height, im, w, false, 0,
 			},
 			vx:                0,
 			vy:                0,
@@ -153,8 +170,16 @@ func (p *Player) Update() {
 func (p *Player) Shoot() {
 	curTime := time.Now().UnixMilli()
 	if p.lastShotTime < curTime-p.fireRate {
+
+		yDir, xDir := p.pi.GetAxes()
+		m := float32(math.Sqrt(float64(xDir*xDir + yDir*yDir)))
+		xDir /= m
+		yDir /= m
+
+		bulletSpeed := float32(12)
+
 		p.lastShotTime = curTime
-		p := NewBullet(p.x, p.y+p.height/3, 12, 0, 10, p.w)
+		p := NewBullet(p.x, p.y+p.height/3, xDir*bulletSpeed+p.vx, yDir*bulletSpeed+p.vy, 10, p.w)
 		p.w.AddProjectile(p)
 	}
 }
@@ -168,7 +193,7 @@ func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *Wo
 	return &Projectile{
 		Entity: Entity{
 			GameObject: GameObject{
-				id: id, x: x, y: y, width: width, height: height, im: im, w: w,
+				id: id, x: x, y: y, width: width, height: height, im: im, w: w, theta: math.Atan2(float64(vy), float64(vx)),
 			},
 			vx:                vx,
 			vy:                vy,
@@ -182,4 +207,9 @@ func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *Wo
 
 func NewBullet(x, y, vx, vy, damage float32, w *World) *Projectile {
 	return NewProjectile(0, x, y, 15, 10, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
+}
+
+func (p *Projectile) Update() {
+	xCol, yCol := p.WillCollideWithWorld()
+	p.shouldRemove = xCol || yCol
 }
