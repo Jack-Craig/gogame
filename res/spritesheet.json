@@ -24,9 +24,17 @@
 	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
 	"sourceSize": {"w":16,"h":16}
 },
+"3.png":
+{
+	"frame": {"x":56,"y":0,"w":16,"h":16},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
+	"sourceSize": {"w":16,"h":16}
+},
 "4.png":
 {
-	"frame": {"x":0,"y":16,"w":240,"h":160},
+	"frame": {"x":0,"y":24,"w":240,"h":160},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":240,"h":160},
@@ -34,7 +42,7 @@
 },
 "5.png":
 {
-	"frame": {"x":0,"y":176,"w":240,"h":160},
+	"frame": {"x":0,"y":184,"w":240,"h":160},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":240,"h":160},
@@ -42,7 +50,7 @@
 },
 "6.png":
 {
-	"frame": {"x":0,"y":336,"w":240,"h":160},
+	"frame": {"x":0,"y":344,"w":240,"h":160},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":240,"h":160},
@@ -56,17 +64,25 @@
 	"spriteSourceSize": {"x":0,"y":0,"w":8,"h":6},
 	"sourceSize": {"w":8,"h":6}
 },
-"dirt_back.png":
+"8.png":
 {
-	"frame": {"x":56,"y":0,"w":16,"h":16},
+	"frame": {"x":72,"y":0,"w":16,"h":16},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
 	"sourceSize": {"w":16,"h":16}
 },
-"3.png":
+"9.png":
 {
-	"frame": {"x":72,"y":0,"w":16,"h":16},
+	"frame": {"x":104,"y":0,"w":64,"h":24},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":64,"h":24},
+	"sourceSize": {"w":64,"h":24}
+},
+"dirt_back.png":
+{
+	"frame": {"x":88,"y":0,"w":16,"h":16},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
@@ -77,8 +93,8 @@
 	"version": "1.0",
 	"image": "spritesheet.png",
 	"format": "RGBA8888",
-	"size": {"w":240,"h":496},
+	"size": {"w":240,"h":504},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:049064394cbbc54748145386727b1c89:5298a6a94c1f5b3f6e97ba66fe611814:729adc6043343cfda41c447ce8f464d6$"
+	"smartupdate": "$TexturePacker:SmartUpdate:2e056475548110ab6d780c5dc50a0741:b02246ce0cab344f1b4a6f454bf43228:729adc6043343cfda41c447ce8f464d6$"
 }
 }

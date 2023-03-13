@@ -200,18 +200,34 @@ func (pi *PlayerInfo) Draw(screen *ebiten.Image) {
 	renderY := int(pi.player.w.camera.screenHeight)
 	renderX := int(pi.player.w.camera.screenWidth * (float32(pi.player.id) / float32(len(pi.player.w.playerObjects)+1)))
 
+	bo := pi.player.w.gdl.GetSpriteImage(graphics.PlayerInfo)
+	w, h := bo.Size()
+	scale := int(TILEWIDTH*4) / w
+	realWidth := w * scale
+	realHeight := h * scale
+	boxOp := ebiten.DrawImageOptions{}
+	boxOp.GeoM.Scale(float64(scale), float64(scale))
+	boxOp.GeoM.Translate(float64(renderX-realWidth/2), float64(renderY-realHeight))
+	screen.DrawImage(bo, &boxOp)
+
 	statusText := fmt.Sprintf("%0.f", pi.player.health)
-	boxSize := text.BoundString(*pi.player.w.gdl.GetFont(), statusText)
+	boxSize := text.BoundString(*pi.player.w.gdl.GetFontNormal(), statusText)
 	width := boxSize.Max.X - boxSize.Min.X
 	height := boxSize.Max.Y - boxSize.Min.Y
-	text.Draw(screen, statusText, *pi.player.w.gdl.GetFont(), renderX-width/2, renderY-height/2, color.White)
+	f := pi.player.w.gdl.GetFontNormal()
+	text.Draw(screen, pi.player.name, *pi.player.w.gdl.GetFontSmall(), renderX-width/2, renderY-height/2-24, color.White)
+	text.Draw(screen, statusText, *f, renderX-width/2, renderY-height/2, color.White)
 
 	op := ebiten.DrawImageOptions{}
-	scale := float64(height) / float64(graphics.TILESIZE)
-	scale *= 1.2
-	op.GeoM.Scale(scale, scale)
-	op.GeoM.Translate(float64(renderX)-scale*float64(graphics.TILESIZE)-float64(width)/2-10, float64(renderY-height)-scale*float64(graphics.TILESIZE)/2)
-	screen.DrawImage(pi.player.im, &op)
+	guyScale := 1.2 * float64(height) / float64(graphics.TILESIZE)
+	guySize := guyScale * float64(graphics.TILESIZE)
+	op.GeoM.Scale(guyScale, guyScale)
+	op.GeoM.Translate(float64(renderX)-guySize-float64(width)/2-10, float64(renderY-height)-guySize/2)
+	if pi.player.isDead {
+		screen.DrawImage(pi.player.w.gdl.GetSpriteImage(graphics.Skull), &op)
+	} else {
+		screen.DrawImage(pi.player.im, &op)
+	}
 }
 
 // Levels, Biomes, and TileChunks handle world generation

@@ -126,8 +126,9 @@ func (e *Entity) AddVel(dx, dy float32) {
 // Players are entities with controls
 type Player struct {
 	Entity
-	pi *input.PlayerInput
-
+	pi     *input.PlayerInput
+	isDead bool
+	name   string
 	// TOOD: Move to gun struct
 	fireRate     int64 // Milliseconds
 	lastShotTime int64 // millseconds
@@ -146,6 +147,8 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 		},
 		pi:       pip,
 		fireRate: 150,
+		name:     "Gus Fucker",
+		isDead:   false,
 	}
 }
 

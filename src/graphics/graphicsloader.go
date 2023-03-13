@@ -31,6 +31,8 @@ const (
 	Background2 // 5
 	Background3
 	Bullet
+	Skull
+	PlayerInfo
 	Final
 )
 
@@ -48,9 +50,9 @@ type mapData struct {
 // Loads sprit sheet map into memory
 // Serves requests from sprite_id to spritesheet coordinates
 type GraphicsDataLoader struct {
-	spriteSheet *ebiten.Image
-	spriteMap   map[SpriteID]*ebiten.Image
-	font        font.Face
+	spriteSheet           *ebiten.Image
+	spriteMap             map[SpriteID]*ebiten.Image
+	fontSmall, fontNormal font.Face
 }
 
 func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
@@ -99,15 +101,24 @@ func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
 	}
 	*/
 	parsedFont, _ := opentype.Parse(fonts.MPlus1pRegular_ttf)
-	font, err := opentype.NewFace(parsedFont, &opentype.FaceOptions{
-		Size:    24,
+	fontNormal, err := opentype.NewFace(parsedFont, &opentype.FaceOptions{
+		Size:    20,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	gdl.font = text.FaceWithLineHeight(font, 54)
+	gdl.fontNormal = text.FaceWithLineHeight(fontNormal, 54)
+	fontSmall, err := opentype.NewFace(parsedFont, &opentype.FaceOptions{
+		Size:    12,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	gdl.fontSmall = fontSmall
 	return gdl
 }
 
@@ -115,6 +126,10 @@ func (gdl *GraphicsDataLoader) GetSpriteImage(spriteId SpriteID) *ebiten.Image {
 	return gdl.spriteMap[spriteId]
 }
 
-func (gdl *GraphicsDataLoader) GetFont() *font.Face {
-	return &gdl.font
+func (gdl *GraphicsDataLoader) GetFontSmall() *font.Face {
+	return &gdl.fontSmall
+}
+
+func (gdl *GraphicsDataLoader) GetFontNormal() *font.Face {
+	return &gdl.fontNormal
 }
