@@ -23,15 +23,14 @@ const (
 type SpriteID uint32
 
 const (
-	// 0
-	DirtTile SpriteID = iota
+	DirtTile SpriteID = iota // 0
 	GrassTile
 	RockTile
 	UserTile
 	Background1
-	// 5
-	Background2
+	Background2 // 5
 	Background3
+	Bullet
 	Final
 )
 

@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"math/rand"
 
+	"github.com/Jack-Craig/gogame/src/common"
 	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/Jack-Craig/gogame/src/input"
 	"github.com/aquilax/go-perlin"
@@ -36,6 +37,7 @@ type World struct {
 	entityObjects []*Entity
 	playerObjects []*Player
 	playerInfos   []*PlayerInfo
+	projectiles   []*Projectile
 	gravity       float32
 	worldTiles    [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
 	inited        bool
@@ -75,10 +77,17 @@ func (w *World) Update() {
 	w.camera.Update()
 	w.level.Update()
 	for _, player := range w.playerObjects {
+		if player.shouldRemove {
+			// TODO: Figure out to do when player is dead
+		}
 		player.Update()
 	}
-	for _, entity := range w.entityObjects {
-		entity.AddVel(0, w.gravity)
+	for i, entity := range w.entityObjects {
+		if entity.shouldRemove {
+			common.Remove(w.entityObjects, i)
+			continue
+		}
+		entity.AddVel(0, w.gravity*entity.gravityMultiplier)
 		entity.Update()
 		entity.collidingEntities = nil
 	}
@@ -100,12 +109,24 @@ func (w *World) Update() {
 			}
 		}
 	}
+	for i, projectile := range w.projectiles {
+		if projectile.vx == 0 {
+			projectile.shouldRemove = true
+			common.Remove(w.projectiles, i)
+		}
+	}
 }
 func (w *World) AddEntity(e *Entity) {
 	e.w = w
 	w.gameObjects = append(w.gameObjects, &e.GameObject)
 	w.entityObjects = append(w.entityObjects, e)
 }
+
+func (w *World) AddProjectile(b *Projectile) {
+	w.AddEntity(&b.Entity)
+	w.projectiles = append(w.projectiles, b)
+}
+
 func (w *World) Draw(screen *ebiten.Image) {
 	if !w.inited {
 		return
@@ -134,7 +155,11 @@ func (w *World) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	for _, gobj := range w.gameObjects {
+	for i, gobj := range w.gameObjects {
+		if gobj.shouldRemove {
+			w.gameObjects = common.Remove(w.gameObjects, i)
+			continue
+		}
 		gobj.Draw(screen)
 	}
 	for _, playerObj := range w.playerObjects {

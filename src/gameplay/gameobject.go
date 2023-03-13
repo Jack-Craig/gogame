@@ -12,11 +12,12 @@ type GameObject struct {
 	x, y, width, height float32
 	im                  *ebiten.Image
 	w                   *World
+	shouldRemove        bool
 }
 
 func NewGameObject(id uint32, x, y, width, height float32, w *World, im *ebiten.Image) *GameObject {
 	return &GameObject{
-		id, x, y, width, height, im, w,
+		id, x, y, width, height, im, w, false,
 	}
 }
 
@@ -26,7 +27,8 @@ func (gobj *GameObject) Draw(screen *ebiten.Image) {
 	}
 	op := ebiten.DrawImageOptions{}
 	camOffX, camOffY := gobj.w.camera.GetRenderOffset()
-	op.GeoM.Scale(float64(gobj.width/float32(graphics.TILESIZE)), float64(float32(gobj.height/graphics.TILESIZE)))
+	w, h := gobj.im.Size()
+	op.GeoM.Scale(float64(gobj.width/float32(w)), float64(float32(gobj.height/float32(h))))
 	op.GeoM.Translate(float64(camOffX), float64(camOffY))
 	op.GeoM.Translate(float64(gobj.x), float64(gobj.y))
 	screen.DrawImage(gobj.im, &op)
@@ -40,7 +42,7 @@ type Tile struct {
 
 func NewTile(id uint32, x, y float32, w *World, im *ebiten.Image) *Tile {
 	return &Tile{
-		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w},
+		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false},
 		false,
 	}
 }
@@ -48,9 +50,9 @@ func NewTile(id uint32, x, y float32, w *World, im *ebiten.Image) *Tile {
 // Entities are similar to game objects but also have movement
 type Entity struct {
 	GameObject
-	vx, vy           float32
-	stayWithinCamera bool
-	health           float32
+	vx, vy                    float32
+	stayWithinCamera          bool
+	health, gravityMultiplier float32
 	// Maintained by world every Update()
 	collidingEntities []*Entity
 }
@@ -112,11 +114,12 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 	return &Player{
 		Entity: Entity{
 			GameObject: GameObject{
-				id, x, y, width, height, im, w,
+				id, x, y, width, height, im, w, false,
 			},
-			vx:               0,
-			vy:               0,
-			stayWithinCamera: true,
+			vx:                0,
+			vy:                0,
+			stayWithinCamera:  true,
+			gravityMultiplier: 1,
 		},
 		pi: pip,
 	}
@@ -135,16 +138,8 @@ func (p *Player) Update() {
 	}
 
 	if p.pi.IsButtonPressed(input.JoyConA) {
-		yAx, xAx := p.pi.GetAxes()
-		bullet := &Entity{}
-		bullet.x = p.x
-		bullet.y = p.y
-		bullet.vx = xAx * 50
-		bullet.vy = yAx * 50
-		bullet.width = 10
-		bullet.height = 10
-		//bullet.im = p.w.gdl.GetTileImage(1)
-		p.w.AddEntity(bullet)
+		bullet := NewBullet(p.x, p.y, 30, 0, 10, p.w)
+		p.w.AddProjectile(bullet)
 	}
 }
 
@@ -170,5 +165,5 @@ func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *Wo
 }
 
 func NewBullet(x, y, vx, vy, damage float32, w *World) *Projectile {
-	return NewProjectile(0, x, y, 10, 6, vx, vy, damage, w, nil)
+	return NewProjectile(0, x, y, 50, 20, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
 }
