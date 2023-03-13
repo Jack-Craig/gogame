@@ -271,12 +271,13 @@ func (l *Level) Update() {
 
 func (l *Level) checkWorldUpdate() {
 	// Check if we should generate more shit
-	floorBase := uint32(.7 * float64(WORLDBUFFERHEIGHT))
+	generateAmplitude := uint32(8)
+	floorBase := WORLDBUFFERHEIGHT - generateAmplitude
 	for (l.worldFrameStart+WORLDGENBUFFERLEN)%WORLDBUFFERLEN != l.worldGeneratedEnd%WORLDBUFFERLEN {
 		arrX := l.worldGeneratedEnd
 		worldX := uint32(l.world.worldTiles[0][l.worldGeneratedEnd].x)
 		rawY := l.perlin.Noise1D(float64(worldX) / float64(TILEWIDTH*15))
-		groundY := floorBase + uint32(rawY*15)
+		groundY := floorBase + uint32(rawY*float64(generateAmplitude))
 		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 			if y == groundY {
 				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
