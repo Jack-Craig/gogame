@@ -35,7 +35,7 @@ func (ps *PlayState) Update() {
 }
 
 func (ps *PlayState) init() {
-	ps.gdl = graphics.NewGraphicsDataLoader("res/play")
+	ps.gdl = graphics.NewGraphicsDataLoader("res")
 	ps.world = gameplay.NewWorld(ps.gdl, ps.im)
 	ps.inited = true
 }

@@ -1,6 +1,7 @@
 package gameplay
 
 import (
+	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
@@ -14,7 +15,9 @@ type Background struct {
 
 func NewBackground(world *World) *Background {
 	b := &Background{world: world}
-	b.first, b.second, b.third = world.gdl.GetBackgroundImages()
+	b.first = world.gdl.GetSpriteImage(graphics.Background1)
+	b.second = world.gdl.GetSpriteImage(graphics.Background2)
+	b.third = world.gdl.GetSpriteImage(graphics.Background3)
 	b.width = float32(b.third.Bounds().Max.X - b.third.Bounds().Min.X)
 	b.height = float32(b.third.Bounds().Max.Y - b.third.Bounds().Min.Y)
 	b.firstModifier = .05

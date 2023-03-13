@@ -50,7 +50,7 @@ func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager) *World {
 	w.im = im
 	w.camera = NewCamera(w)
 	for id, playerInput := range *w.im.GetPlayerInputs() {
-		p := NewPlayer(id+1, PLAYERWORLDSTARTX, PLAYERWORLDSTARTY, TILEWIDTH, TILEWIDTH, w, w.gdl.GetSpriteImage(4), playerInput)
+		p := NewPlayer(id+1, PLAYERWORLDSTARTX, PLAYERWORLDSTARTY, TILEWIDTH, TILEWIDTH, w, w.gdl.GetSpriteImage(graphics.UserTile), playerInput)
 		p.health = 100
 		w.gameObjects = append(w.gameObjects, &p.GameObject)
 		w.entityObjects = append(w.entityObjects, &p.Entity)
@@ -279,13 +279,13 @@ func (l *Level) checkWorldUpdate() {
 		groundY := floorBase + uint32(rawY*15)
 		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 			if y == groundY {
-				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(3)
+				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
 				l.world.worldTiles[y][arrX].isPassable = false
 			} else if y > groundY {
-				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(1)
+				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.DirtTile)
 				l.world.worldTiles[y][arrX].isPassable = false
 			} else {
-				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(6)
+				l.world.worldTiles[y][arrX].im = nil
 				l.world.worldTiles[y][arrX].isPassable = true
 			}
 		}
@@ -304,9 +304,9 @@ type Biome struct {
 }
 
 func (w *World) generateWorld() {
-	grass := w.gdl.GetSpriteImage(2)
-	sky := w.gdl.GetSpriteImage(4)
-	dirt := w.gdl.GetSpriteImage(1)
+	grass := w.gdl.GetTileImage(2)
+	sky := w.gdl.GetTileImage(4)
+	dirt := w.gdl.GetTileImage(1)
 	for y := float32(0); y < float32(WORLDBUFFERHEIGHT); y++ {
 		var row []*Tile
 		for x := float32(0); x < float32(WORLDBUFFERLEN); x++ {

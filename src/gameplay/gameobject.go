@@ -21,6 +21,9 @@ func NewGameObject(id uint32, x, y, width, height float32, w *World, im *ebiten.
 }
 
 func (gobj *GameObject) Draw(screen *ebiten.Image) {
+	if gobj.im == nil {
+		return
+	}
 	op := ebiten.DrawImageOptions{}
 	camOffX, camOffY := gobj.w.camera.GetRenderOffset()
 	op.GeoM.Scale(float64(gobj.width/float32(graphics.TILESIZE)), float64(float32(gobj.height/graphics.TILESIZE)))
@@ -140,7 +143,32 @@ func (p *Player) Update() {
 		bullet.vy = yAx * 50
 		bullet.width = 10
 		bullet.height = 10
-		bullet.im = p.w.gdl.GetSpriteImage(1)
+		//bullet.im = p.w.gdl.GetTileImage(1)
 		p.w.AddEntity(bullet)
 	}
+}
+
+type Projectile struct {
+	Entity
+	damage float32
+}
+
+func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *World, im *ebiten.Image) *Projectile {
+	return &Projectile{
+		Entity: Entity{
+			GameObject: GameObject{
+				id: id, x: x, y: y, width: width, height: height, im: im, w: w,
+			},
+			vx:                vx,
+			vy:                vy,
+			stayWithinCamera:  false,
+			health:            0,
+			collidingEntities: nil,
+		},
+		damage: damage,
+	}
+}
+
+func NewBullet(x, y, vx, vy, damage float32, w *World) *Projectile {
+	return NewProjectile(0, x, y, 10, 6, vx, vy, damage, w, nil)
 }
