@@ -271,7 +271,7 @@ func (l *Level) Update() {
 
 func (l *Level) checkWorldUpdate() {
 	// Check if we should generate more shit
-	floorBase := uint32(2.0 / 3 * float64(WORLDBUFFERHEIGHT))
+	floorBase := uint32(.7 * float64(WORLDBUFFERHEIGHT))
 	for (l.worldFrameStart+WORLDGENBUFFERLEN)%WORLDBUFFERLEN != l.worldGeneratedEnd%WORLDBUFFERLEN {
 		arrX := l.worldGeneratedEnd
 		worldX := uint32(l.world.worldTiles[0][l.worldGeneratedEnd].x)

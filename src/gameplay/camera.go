@@ -30,7 +30,7 @@ func (c *Camera) Update() {
 		c.offX = newXOffset
 	}
 	newYOffset := -totalY/float32(len(c.w.playerObjects)) + c.screenHeight*2/3
-	if !c.IsInsideCamera(-c.offX+c.screenWidth/2, -newYOffset+c.screenWidth*1/3) {
+	if float32(WORLDBUFFERHEIGHT*uint32(TILEWIDTH)) > -newYOffset+c.screenHeight {
 		c.offY = newYOffset
 	}
 
