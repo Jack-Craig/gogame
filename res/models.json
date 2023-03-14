@@ -1,0 +1,16 @@
+{
+    "players":{
+        "Gus": {
+            "imageId": 3
+        },
+        "Clyde": {
+            "imageId": 10
+        },
+        "Mody": {
+            "imageId": 11
+        },
+        "Frank": {
+            "imageId": 12
+        }
+    }
+}

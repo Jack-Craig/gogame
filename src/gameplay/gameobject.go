@@ -146,9 +146,9 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 			gravityMultiplier: 1,
 		},
 		pi:       pip,
-		fireRate: 150,
+		fireRate: 40,
 		name:     "Gus Fucker",
-		isDead:   false,
+		isDead:   true,
 	}
 }
 

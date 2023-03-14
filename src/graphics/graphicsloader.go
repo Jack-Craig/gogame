@@ -26,13 +26,16 @@ const (
 	DirtTile SpriteID = iota // 0
 	GrassTile
 	RockTile
-	UserTile
+	UserGusTile
 	Background1
 	Background2 // 5
 	Background3
 	Bullet
 	Skull
 	PlayerInfo
+	UserClydeTile // 10
+	UserModyTile
+	UserFrankTile
 	Final
 )
 
@@ -55,11 +58,11 @@ type GraphicsDataLoader struct {
 	fontSmall, fontNormal font.Face
 }
 
-func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
+func NewGraphicsDataLoader() *GraphicsDataLoader {
 	gdl := &GraphicsDataLoader{}
 
 	// Load spriteImage
-	spriteImageFile, err := os.Open(path + "/spritesheet.png")
+	spriteImageFile, err := os.Open("res/spritesheet.png")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,7 +74,7 @@ func NewGraphicsDataLoader(path string) *GraphicsDataLoader {
 	gdl.spriteSheet = ebiten.NewImageFromImage(spriteImage)
 
 	// Load spriteMap
-	spriteMapFile, err := os.Open(path + "/spritesheet.json")
+	spriteMapFile, err := os.Open("res/spritesheet.json")
 	if err != nil {
 		log.Fatal(err)
 	}

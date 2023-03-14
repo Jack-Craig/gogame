@@ -3,14 +3,16 @@ package main
 import (
 	"image/color"
 	"log"
+	"math/rand"
+	"time"
 
-	"github.com/Jack-Craig/gogame/src/gamestate"
+	"github.com/Jack-Craig/gogame/src/gameplay"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Game struct {
 	inited       bool
-	currentState gamestate.GameState
+	currentState gameplay.GameState
 }
 
 func (g *Game) init() {
@@ -40,9 +42,10 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 }
 
 func main() {
+	rand.Seed(time.Now().Unix())
 	ebiten.SetFullscreen(true)
 	ebiten.SetWindowTitle("Hello, World!")
-	if err := ebiten.RunGame(&Game{currentState: &gamestate.MenuState{}}); err != nil {
+	if err := ebiten.RunGame(&Game{currentState: gameplay.NewMenuState()}); err != nil {
 		log.Fatal(err)
 	}
 }

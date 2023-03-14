@@ -70,7 +70,6 @@ func (im *InputManager) pairJoyCon(device *hid.DeviceInfo, id *uint32, isLeft bo
 	if err != nil {
 		log.Fatalln(err)
 	}
-	jc.SendRumble(joycon.RumbleSet{{40, 16, 10, 32}})
 	playerInput := &PlayerInput{
 		id: *id,
 		jc: jc,

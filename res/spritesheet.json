@@ -74,15 +74,39 @@
 },
 "9.png":
 {
-	"frame": {"x":104,"y":0,"w":64,"h":24},
+	"frame": {"x":152,"y":0,"w":64,"h":24},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":64,"h":24},
 	"sourceSize": {"w":64,"h":24}
 },
-"dirt_back.png":
+"10.png":
 {
 	"frame": {"x":88,"y":0,"w":16,"h":16},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
+	"sourceSize": {"w":16,"h":16}
+},
+"11.png":
+{
+	"frame": {"x":104,"y":0,"w":16,"h":16},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
+	"sourceSize": {"w":16,"h":16}
+},
+"12.png":
+{
+	"frame": {"x":120,"y":0,"w":16,"h":16},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
+	"sourceSize": {"w":16,"h":16}
+},
+"dirt_back.png":
+{
+	"frame": {"x":136,"y":0,"w":16,"h":16},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":16,"h":16},
@@ -95,6 +119,6 @@
 	"format": "RGBA8888",
 	"size": {"w":240,"h":504},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:2e056475548110ab6d780c5dc50a0741:b02246ce0cab344f1b4a6f454bf43228:729adc6043343cfda41c447ce8f464d6$"
+	"smartupdate": "$TexturePacker:SmartUpdate:877042da8d82d2a852fcc0aba756a8fc:336498f39e9b80733658b3c437419e64:729adc6043343cfda41c447ce8f464d6$"
 }
 }

@@ -46,18 +46,17 @@ type World struct {
 	level *Level
 }
 
-func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager) *World {
+func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteIds []graphics.SpriteID) *World {
 	w := &World{}
 	w.gdl = gdl
 	w.im = im
 	w.camera = NewCamera(w)
 	for id, playerInput := range *w.im.GetPlayerInputs() {
-		p := NewPlayer(id+1, PLAYERWORLDSTARTX, PLAYERWORLDSTARTY, TILEWIDTH, TILEWIDTH, w, w.gdl.GetSpriteImage(graphics.UserTile), playerInput)
+		p := NewPlayer(id+1, PLAYERWORLDSTARTX, PLAYERWORLDSTARTY, TILEWIDTH, TILEWIDTH, w, w.gdl.GetSpriteImage(spriteIds[id]), playerInput)
 		p.health = 100
 		w.gameObjects = append(w.gameObjects, &p.GameObject)
 		w.entityObjects = append(w.entityObjects, &p.Entity)
 		w.playerObjects = append(w.playerObjects, p)
-
 		playerInfo := &PlayerInfo{p}
 		w.playerInfos = append(w.playerInfos, playerInfo)
 	}
@@ -81,6 +80,13 @@ func (w *World) Update() {
 			// TODO: Figure out to do when player is dead
 		}
 		player.Update()
+	}
+	for i, projectile := range w.projectiles {
+		projectile.Update()
+		if projectile.shouldRemove {
+			common.Remove(w.projectiles, i)
+			continue
+		}
 	}
 	for i, entity := range w.entityObjects {
 		if entity.shouldRemove {
@@ -107,13 +113,6 @@ func (w *World) Update() {
 				ei.collidingEntities = append(ei.collidingEntities, ej)
 				ej.collidingEntities = append(ej.collidingEntities, ei)
 			}
-		}
-	}
-	for i, projectile := range w.projectiles {
-		projectile.Update()
-		if projectile.shouldRemove {
-			common.Remove(w.projectiles, i)
-			continue
 		}
 	}
 }
