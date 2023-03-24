@@ -34,12 +34,14 @@ func NewPlayState(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spri
 }
 
 func (ps *PlayState) GetNextState() GameState {
+	if ps.world.allPlayersDoneOrDead {
+		return NewShopState()
+	}
 	return nil
 }
 
 func (ps *PlayState) Update() {
 	ps.world.Update()
-
 }
 
 func (ps *PlayState) Draw(screen *ebiten.Image) {
@@ -224,8 +226,12 @@ type ShopState struct {
 	GameState
 }
 
+func NewShopState() *ShopState {
+	return &ShopState{}
+}
+
 func (ss *ShopState) GetNextState() GameState {
-	return nil
+	return NewMenuState()
 }
 
 func (ss *ShopState) Update() {

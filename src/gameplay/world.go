@@ -30,18 +30,18 @@ const (
 )
 
 type World struct {
-	gdl              *graphics.GraphicsDataLoader
-	im               *input.InputManager
-	camera           *Camera
-	gameObjects      []*GameObject
-	entityObjects    []*Entity
-	playerObjects    []*Player
-	playerInfos      []*PlayerInfo
-	projectiles      []*Projectile
-	gravity          float32
-	worldTiles       [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
-	inited, canLeave bool
-	bg               *Background
+	gdl                                    *graphics.GraphicsDataLoader
+	im                                     *input.InputManager
+	camera                                 *Camera
+	gameObjects                            []*GameObject
+	entityObjects                          []*Entity
+	playerObjects                          []*Player
+	playerInfos                            []*PlayerInfo
+	projectiles                            []*Projectile
+	gravity                                float32
+	worldTiles                             [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
+	inited, canLeave, allPlayersDoneOrDead bool
+	bg                                     *Background
 
 	level *Level
 }
@@ -75,12 +75,20 @@ func (w *World) generateLevel() {
 func (w *World) Update() {
 	w.camera.Update()
 	w.level.Update()
+
+	w.allPlayersDoneOrDead = true
 	for _, player := range w.playerObjects {
-		if player.shouldRemove {
+		if !w.camera.IsInsideCamera(player.x, -1) {
+			player.shouldRemove = true
+		}
+		if !player.shouldRemove {
 			// TODO: Figure out to do when player is dead
+			// Remove from entities, gameobjects, keep in players
+			w.allPlayersDoneOrDead = false
 		}
 		player.Update()
 	}
+
 	for i, projectile := range w.projectiles {
 		projectile.Update()
 		if projectile.shouldRemove {
