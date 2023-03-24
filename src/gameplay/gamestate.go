@@ -30,7 +30,7 @@ type PlayState struct {
 }
 
 func NewPlayState(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteIds []graphics.SpriteID) *PlayState {
-	return &PlayState{gdl: gdl, im: im, world: NewWorld(gdl, im, spriteIds)}
+	return &PlayState{gdl: gdl, im: im, world: NewWorld(gdl, im, spriteIds, 100)}
 }
 
 func (ps *PlayState) GetNextState() GameState {
@@ -183,7 +183,7 @@ func (pd *PlayerData) Draw(screen *ebiten.Image) {
 	name := pd.ms.playerTileIds[pd.curIdx].name
 	boundRect := text.BoundString(font, name)
 	boundRectW, boundRectH := boundRect.Size().X, boundRect.Size().Y
-	text.Draw(screen, name, font, int(pd.id)*w+int(float64(w)/2)-boundRectW/2, int(float64(h/2)+.5*(guyWidth))+boundRectH, color.Black)
+	text.Draw(screen, name, font, int(pd.id)*w+int(float64(w)/2)-boundRectW/2, int(float64(h/2)+.5*(guyWidth))+boundRectH, color.White)
 
 	if pd.readyForStart {
 		text.Draw(screen, "Ready", font, int(pd.id)*w, 20, color.White)

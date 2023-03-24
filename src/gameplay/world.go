@@ -39,6 +39,7 @@ type World struct {
 	playerInfos   []*PlayerInfo
 	projectiles   []*Projectile
 	gravity       float32
+	worldWidth    float32
 	worldTiles    [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
 	inited        bool
 	bg            *Background
@@ -46,7 +47,7 @@ type World struct {
 	level *Level
 }
 
-func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteIds []graphics.SpriteID) *World {
+func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteIds []graphics.SpriteID, worldWidth float32) *World {
 	w := &World{}
 	w.gdl = gdl
 	w.im = im
@@ -64,6 +65,7 @@ func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteId
 	w.gravity = .25
 	w.generateLevel()
 	w.inited = true
+	w.worldWidth = worldWidth
 	return w
 }
 
@@ -287,6 +289,10 @@ func (l *Level) Update() {
 	if l.world.camera.screenWidth > 0 && l.worldFrameEnd == 0 {
 		l.worldFrameEnd = l.worldFrameStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
 		l.worldFrameEnd %= WORLDBUFFERLEN
+	}
+	// World buffer/generation stuff
+	if l.worldXStart > float32(l.world.worldWidth) {
+		return
 	}
 	if l.world.camera.screenWidth > 0 && !l.world.camera.IsInsideCamera(l.worldXStart+TILEWIDTH, -1) {
 		// Need to advance world buffer

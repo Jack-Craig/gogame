@@ -25,8 +25,8 @@ func (c *Camera) Update() {
 		totalY += player.y + player.height/2
 	}
 	newXOffset := -totalX/float32(len(c.w.playerObjects)) + c.screenWidth/2
-	// Only able to move right
-	if newXOffset < c.offX {
+	// Only able to move right, cant see outside of world on right
+	if newXOffset < c.offX && int(c.w.level.worldXStart) < int(c.w.worldWidth) {
 		c.offX = newXOffset
 	}
 	newYOffset := -totalY/float32(len(c.w.playerObjects)) + c.screenHeight*2/3
