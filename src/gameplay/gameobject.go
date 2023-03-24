@@ -44,12 +44,13 @@ func (gobj *GameObject) Draw(screen *ebiten.Image) {
 // Tiles are game objects with collision, the world is made of tiles
 type Tile struct {
 	GameObject
-	isPassable bool
+	isPassable, isClimbable bool
 }
 
 func NewTile(id uint32, x, y float32, w *World, im *ebiten.Image) *Tile {
 	return &Tile{
 		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false, 0},
+		false,
 		false,
 	}
 }
@@ -83,7 +84,9 @@ func (e *Entity) Update() {
 	}
 	collisionX, collisionY := e.WillCollideWithWorld()
 	if e.stayWithinCamera {
-		collisionX = collisionX || !e.w.camera.IsInsideCamera(expectedX, e.y) || !e.w.camera.IsInsideCamera(expectedX, e.y+e.height)
+		if e.vx < 0 || !e.w.canLeave {
+			collisionX = collisionX || !e.w.camera.IsInsideCamera(expectedX, e.y) || !e.w.camera.IsInsideCamera(expectedX, e.y+e.height)
+		}
 	}
 	if collisionX {
 		e.vx = 0

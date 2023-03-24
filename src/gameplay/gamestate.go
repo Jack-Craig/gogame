@@ -30,7 +30,7 @@ type PlayState struct {
 }
 
 func NewPlayState(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteIds []graphics.SpriteID) *PlayState {
-	return &PlayState{gdl: gdl, im: im, world: NewWorld(gdl, im, spriteIds, 100)}
+	return &PlayState{gdl: gdl, im: im, world: NewWorld(gdl, im, spriteIds)}
 }
 
 func (ps *PlayState) GetNextState() GameState {

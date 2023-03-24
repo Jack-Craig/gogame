@@ -30,24 +30,23 @@ const (
 )
 
 type World struct {
-	gdl           *graphics.GraphicsDataLoader
-	im            *input.InputManager
-	camera        *Camera
-	gameObjects   []*GameObject
-	entityObjects []*Entity
-	playerObjects []*Player
-	playerInfos   []*PlayerInfo
-	projectiles   []*Projectile
-	gravity       float32
-	worldWidth    float32
-	worldTiles    [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
-	inited        bool
-	bg            *Background
+	gdl              *graphics.GraphicsDataLoader
+	im               *input.InputManager
+	camera           *Camera
+	gameObjects      []*GameObject
+	entityObjects    []*Entity
+	playerObjects    []*Player
+	playerInfos      []*PlayerInfo
+	projectiles      []*Projectile
+	gravity          float32
+	worldTiles       [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
+	inited, canLeave bool
+	bg               *Background
 
 	level *Level
 }
 
-func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteIds []graphics.SpriteID, worldWidth float32) *World {
+func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteIds []graphics.SpriteID) *World {
 	w := &World{}
 	w.gdl = gdl
 	w.im = im
@@ -65,12 +64,11 @@ func NewWorld(gdl *graphics.GraphicsDataLoader, im *input.InputManager, spriteId
 	w.gravity = .25
 	w.generateLevel()
 	w.inited = true
-	w.worldWidth = worldWidth
 	return w
 }
 
 func (w *World) generateLevel() {
-	w.level = NewLevel(w)
+	w.level = NewLevel(w, 100)
 	w.level.initWorld()
 }
 
@@ -250,16 +248,20 @@ type Level struct {
 	world  *World
 	perlin *perlin.Perlin
 	//curBiome *Biome
+	worldWidth float32
 	// In array coordinates, the start and end of the visible world. Can wrap
 	worldFrameStart uint32
 	worldFrameEnd   uint32
 	// In world coordinates, the left most coordinate
 	worldXStart float32
+	worldXEnd   float32
+	// In world coordinates, the most recenty generated tile
+	worldXGen float32
 	// In array coordinates, the end of generated space
 	worldGeneratedEnd uint32
 }
 
-func NewLevel(world *World) *Level {
+func NewLevel(world *World, worldWidth float32) *Level {
 	/**
 	worldDataFile, err := os.Open("res/world/gen.json")
 	if err != nil {
@@ -271,8 +273,9 @@ func NewLevel(world *World) *Level {
 	json.Unmarshal(worldDataBytes, &worldDataJSON)
 	*/
 	return &Level{
-		world:  world,
-		perlin: perlin.NewPerlin(2, 2, 3, rand.Int63()),
+		world:      world,
+		worldWidth: worldWidth,
+		perlin:     perlin.NewPerlin(2, 2, 3, rand.Int63()),
 	}
 }
 
@@ -291,12 +294,14 @@ func (l *Level) Update() {
 		l.worldFrameEnd %= WORLDBUFFERLEN
 	}
 	// World buffer/generation stuff
-	if l.worldXStart > float32(l.world.worldWidth) {
+	if l.worldXEnd > float32(l.worldWidth) {
+		l.world.canLeave = true
 		return
 	}
-	if l.world.camera.screenWidth > 0 && !l.world.camera.IsInsideCamera(l.worldXStart+TILEWIDTH, -1) {
+	if l.world.camera.screenWidth > 0 && !l.world.camera.IsInsideCamera(l.worldXStart*TILEWIDTH+TILEWIDTH, -1) {
 		// Need to advance world buffer
-		l.worldXStart += TILEWIDTH
+		l.worldXStart += 1
+		l.worldXEnd = l.worldXStart + float32(l.world.camera.screenWidth/TILEWIDTH)
 		lastTile := l.worldFrameStart
 		l.worldFrameStart += 1
 		l.worldFrameStart %= WORLDBUFFERLEN
@@ -321,14 +326,19 @@ func (l *Level) checkWorldUpdate() {
 	generateAmplitude := uint32(8)
 	floorBase := WORLDBUFFERHEIGHT - generateAmplitude
 	for (l.worldFrameStart+WORLDGENBUFFERLEN)%WORLDBUFFERLEN != l.worldGeneratedEnd%WORLDBUFFERLEN {
+		l.worldXGen++
 		arrX := l.worldGeneratedEnd
 		worldX := uint32(l.world.worldTiles[0][l.worldGeneratedEnd].x)
 		rawY := l.perlin.Noise1D(float64(worldX) / float64(TILEWIDTH*15))
 		groundY := floorBase + uint32(rawY*float64(generateAmplitude))
 		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 			if y == groundY {
-				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
-				l.world.worldTiles[y][arrX].isPassable = false
+				if int(l.worldXGen) == int(l.worldWidth) {
+					l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.RockTile)
+				} else {
+					l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
+					l.world.worldTiles[y][arrX].isPassable = false
+				}
 			} else if y > groundY {
 				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.DirtTile)
 				l.world.worldTiles[y][arrX].isPassable = false

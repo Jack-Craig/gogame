@@ -53,6 +53,7 @@ type mapData struct {
 // Serves requests from sprite_id to spritesheet coordinates
 type GraphicsDataLoader struct {
 	spriteSheet           *ebiten.Image
+	overlay               *ebiten.Image
 	spriteMap             map[SpriteID]*ebiten.Image
 	fontSmall, fontNormal font.Face
 }
@@ -88,6 +89,18 @@ func NewGraphicsDataLoader() *GraphicsDataLoader {
 		im := gdl.spriteSheet.SubImage(image.Rect(sd.Frame.X, sd.Frame.Y, sd.Frame.X+sd.Frame.W, sd.Frame.Y+sd.Frame.H)).(*ebiten.Image)
 		gdl.spriteMap[cur] = im
 	}
+	// Load overlay
+	overlayImageFile, err := os.Open("res/overlays/1.png")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer overlayImageFile.Close()
+	overlayImage, _, err := image.Decode(overlayImageFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	gdl.overlay = ebiten.NewImageFromImage(overlayImage)
+
 	// Load font
 	fontFile, err := os.Open("res/font.ttf")
 	if err != nil {
@@ -118,6 +131,10 @@ func NewGraphicsDataLoader() *GraphicsDataLoader {
 	}
 	gdl.fontSmall = fontSmall
 	return gdl
+}
+
+func (gdl *GraphicsDataLoader) GetOverlay() *ebiten.Image {
+	return gdl.overlay
 }
 
 func (gdl *GraphicsDataLoader) GetSpriteImage(spriteId SpriteID) *ebiten.Image {
