@@ -49,11 +49,11 @@ func (ps *PlayState) Draw(screen *ebiten.Image) {
 // MENUSTATE
 type MenuState struct {
 	GameState
-	gdl           *graphics.GraphicsDataLoader
-	im            *input.InputManager
-	numPlayers    int
-	playerData    []*PlayerData
-	playerTileIds []struct {
+	gdl                                   *graphics.GraphicsDataLoader
+	im                                    *input.InputManager
+	numPlayers, windowWidth, windowHeight int
+	playerData                            []*PlayerData
+	playerTileIds                         []struct {
 		id   uint32
 		name string
 	}
@@ -125,6 +125,7 @@ func (ms *MenuState) Update() {
 }
 
 func (ms *MenuState) Draw(screen *ebiten.Image) {
+	ms.windowWidth, ms.windowHeight = screen.Size()
 	for _, pd := range ms.playerData {
 		pd.Draw(screen)
 	}
@@ -134,7 +135,7 @@ type PlayerData struct {
 	id            uint32
 	ms            *MenuState
 	im            *ebiten.Image
-	bg            *ebiten.Image
+	color         color.Color
 	pi            *input.PlayerInput
 	curIdx        int
 	readyForStart bool
@@ -146,31 +147,29 @@ type PlayerData struct {
 
 func NewPlayerData(id uint32, ms *MenuState) *PlayerData {
 	r, g, b := uint8(rand.Uint32()%128), uint8(rand.Uint32()%128), uint8(rand.Uint32()%128)
-	rColor := color.RGBA{r + 100, g + 100, b + 100, 255}
-	ww, wh := ebiten.WindowSize()
-	bg := ebiten.NewImage(ww/ms.numPlayers, wh)
-	bg.Fill(rColor)
 	return &PlayerData{
 		ms:            ms,
 		id:            id,
 		im:            ms.gdl.GetSpriteImage(graphics.SpriteID(ms.playerTileIds[0].id)),
-		bg:            bg,
+		color:         color.RGBA{r + 100, g + 100, b + 100, 255},
 		pi:            (*ms.im.GetPlayerInputs())[id],
 		changeDelayMs: 300,
 	}
 }
 
 func (pd *PlayerData) Draw(screen *ebiten.Image) {
+	bg := ebiten.NewImage(pd.ms.windowWidth/pd.ms.numPlayers, pd.ms.windowHeight)
+	bg.Fill(pd.color)
+
 	font := *pd.ms.gdl.GetFontNormal()
 	dio := ebiten.DrawImageOptions{}
-	w, h := pd.bg.Size()
+	w, h := bg.Size()
 	if pd.readyForStart {
 		dio.ColorM.Scale(.35, .8, .35, 1)
-
 	}
 
 	dio.GeoM.Translate(float64(int(pd.id)*w), 0)
-	screen.DrawImage(pd.bg, &dio)
+	screen.DrawImage(bg, &dio)
 
 	guyWidth := float64(w) * .8
 	wGuy, hGuy := pd.im.Size()

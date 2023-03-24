@@ -43,7 +43,8 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 
 func main() {
 	rand.Seed(time.Now().Unix())
-	ebiten.SetFullscreen(true)
+	ebiten.SetFullscreen(false)
+	ebiten.SetWindowSize(940, 720)
 	ebiten.SetWindowTitle("Hello, World!")
 	if err := ebiten.RunGame(&Game{currentState: gameplay.NewMenuState()}); err != nil {
 		log.Fatal(err)

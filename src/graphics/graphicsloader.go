@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
@@ -87,25 +86,21 @@ func NewGraphicsDataLoader() *GraphicsDataLoader {
 		mapKey := fmt.Sprintf("%d.png", cur)
 		sd := md.Frames[mapKey]
 		im := gdl.spriteSheet.SubImage(image.Rect(sd.Frame.X, sd.Frame.Y, sd.Frame.X+sd.Frame.W, sd.Frame.Y+sd.Frame.H)).(*ebiten.Image)
-		//log.Printf("SubImage: %p, ImageID: %d\n", im, cur)
 		gdl.spriteMap[cur] = im
 	}
 	// Load font
-	/**
 	fontFile, err := os.Open("res/font.ttf")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer fontFile.Close()
-	fontBytes, _ := ioutil.ReadAll(spriteMapFile)
+	fontBytes, _ := ioutil.ReadAll(fontFile)
 	parsedFont, err := opentype.Parse(fontBytes)
 	if err != nil {
 		log.Fatal(err)
 	}
-	*/
-	parsedFont, _ := opentype.Parse(fonts.MPlus1pRegular_ttf)
 	fontNormal, err := opentype.NewFace(parsedFont, &opentype.FaceOptions{
-		Size:    20,
+		Size:    48,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
@@ -114,7 +109,7 @@ func NewGraphicsDataLoader() *GraphicsDataLoader {
 	}
 	gdl.fontNormal = text.FaceWithLineHeight(fontNormal, 54)
 	fontSmall, err := opentype.NewFace(parsedFont, &opentype.FaceOptions{
-		Size:    12,
+		Size:    24,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
