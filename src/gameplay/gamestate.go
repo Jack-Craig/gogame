@@ -1,14 +1,11 @@
 package gameplay
 
 import (
-	"encoding/json"
 	"image/color"
-	"io/ioutil"
-	"log"
 	"math/rand"
-	"os"
 	"time"
 
+	"github.com/Jack-Craig/gogame/src/common"
 	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/Jack-Craig/gogame/src/input"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -62,27 +59,10 @@ type MenuState struct {
 	readyForNextState bool
 }
 
-type playerDataJson struct {
-	Players map[string]playerDataJson_ `json: "players"`
-}
-type playerDataJson_ struct {
-	ImageId int `json: "imageId"`
-}
-
 func NewMenuState() *MenuState {
 	ms := &MenuState{}
-	playerJsonFile, err := os.Open("res/models.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer playerJsonFile.Close()
-	playerJsonBytes, _ := ioutil.ReadAll(playerJsonFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var pd playerDataJson
-	json.Unmarshal(playerJsonBytes, &pd)
-	log.Println(pd)
+	var pd common.PlayerDataJson
+	common.LoadJSON("res/models.json", &pd)
 	for name, d := range pd.Players {
 		ms.playerTileIds = append(ms.playerTileIds, struct {
 			id   uint32

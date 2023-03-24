@@ -1,7 +1,6 @@
 package graphics
 
 import (
-	"encoding/json"
 	"fmt"
 	"image"
 	_ "image/png"
@@ -9,6 +8,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Jack-Craig/gogame/src/common"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
 	"golang.org/x/image/font"
@@ -74,14 +74,8 @@ func NewGraphicsDataLoader() *GraphicsDataLoader {
 	gdl.spriteSheet = ebiten.NewImageFromImage(spriteImage)
 
 	// Load spriteMap
-	spriteMapFile, err := os.Open("res/spritesheet.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer spriteMapFile.Close()
-	spriteMapBytes, _ := ioutil.ReadAll(spriteMapFile)
 	var md mapData
-	json.Unmarshal(spriteMapBytes, &md)
+	common.LoadJSON("res/spritesheet.json", &md)
 	gdl.spriteMap = make(map[SpriteID]*ebiten.Image)
 	for cur := DirtTile; cur < Final; cur++ {
 		mapKey := fmt.Sprintf("%d.png", cur)

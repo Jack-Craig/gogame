@@ -149,7 +149,7 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 			gravityMultiplier: 1,
 		},
 		pi:       pip,
-		fireRate: 40,
+		fireRate: 750,
 		name:     "Gus Fucker",
 		isDead:   true,
 	}
@@ -182,10 +182,10 @@ func (p *Player) Shoot() {
 		xDir /= m
 		yDir /= m
 
-		bulletSpeed := float32(12)
+		bulletSpeed := float32(30)
 
 		p.lastShotTime = curTime
-		p := NewBullet(p.x, p.y+p.height/3, xDir*bulletSpeed+p.vx, yDir*bulletSpeed+p.vy, 10, p.w)
+		p := NewBullet(p.x, p.y+p.height/3, xDir*bulletSpeed, yDir*bulletSpeed, 10, p.w)
 		p.w.AddProjectile(p)
 	}
 }
@@ -212,7 +212,7 @@ func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *Wo
 }
 
 func NewBullet(x, y, vx, vy, damage float32, w *World) *Projectile {
-	return NewProjectile(0, x, y, 15, 10, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
+	return NewProjectile(0, x, y, 25, 8, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
 }
 
 func (p *Projectile) Update() {

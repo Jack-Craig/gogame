@@ -270,16 +270,6 @@ type Level struct {
 }
 
 func NewLevel(world *World, worldWidth float32) *Level {
-	/**
-	worldDataFile, err := os.Open("res/world/gen.json")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer worldDataFile.Close()
-	worldDataBytes, _ := ioutil.ReadAll(worldDataFile)
-	var worldDataJSON interface{}
-	json.Unmarshal(worldDataBytes, &worldDataJSON)
-	*/
 	return &Level{
 		world:      world,
 		worldWidth: worldWidth,
