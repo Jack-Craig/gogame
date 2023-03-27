@@ -23,8 +23,6 @@ type GameState interface {
 type PlayState struct {
 	GameState
 	Handler
-	gdl   *graphics.GraphicsDataLoader
-	im    *input.InputManager
 	world *World
 }
 

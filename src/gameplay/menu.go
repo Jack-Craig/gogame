@@ -48,7 +48,7 @@ func (pd *PlayerData) Draw(screen *ebiten.Image) {
 	dio := ebiten.DrawImageOptions{}
 	w, h := bg.Size()
 	if pd.readyForStart {
-		dio.ColorM.Scale(.35, .8, .35, 1)
+		dio.ColorM.Scale(.4, .8, .4, 1)
 	}
 
 	dio.GeoM.Translate(float64(int(pd.id)*w), 0)
@@ -93,7 +93,7 @@ func (pd *PlayerData) Update() {
 			pd.lastChange = timeNow
 		}
 	}
-	if pd.pi.IsButtonPressed(input.JoyConX) {
+	if pd.pi.IsButtonPressed(input.JoyConB) {
 		if pd.changeDelayMs < timeNow-pd.lastChangeStart {
 			pd.readyForStart = !pd.readyForStart
 			pd.lastChangeStart = timeNow
