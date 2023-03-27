@@ -137,11 +137,11 @@ type Player struct {
 	lastShotTime int64 // millseconds
 }
 
-func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Image, pip *input.PlayerInput) *Player {
+func NewPlayer(id uint32, name string, w *World, im *ebiten.Image, pip *input.PlayerInput) *Player {
 	return &Player{
 		Entity: Entity{
 			GameObject: GameObject{
-				id, x, y, width, height, im, w, false, 0,
+				id, 0, 0, TILEWIDTH, TILEWIDTH, im, w, false, 0,
 			},
 			vx:                0,
 			vy:                0,
@@ -150,7 +150,7 @@ func NewPlayer(id uint32, x, y, width, height float32, w *World, im *ebiten.Imag
 		},
 		pi:       pip,
 		fireRate: 750,
-		name:     "Gus Fucker",
+		name:     name,
 		isDead:   true,
 	}
 }
