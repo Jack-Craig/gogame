@@ -50,3 +50,19 @@ func Remove[T any](slice []T, index int) []T {
 	slice = slice[:l-1]
 	return slice
 }
+
+type RingArray struct {
+	arr []any
+}
+
+func NewRingArray() *RingArray {
+	return &RingArray{}
+}
+
+func (ra *RingArray) Get() {
+
+}
+
+func (ra *RingArray) Set() {
+
+}

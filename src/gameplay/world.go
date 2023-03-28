@@ -22,12 +22,14 @@ const (
 	// Total height of world tile 2d array
 	WORLDBUFFERHEIGHT uint32 = 30
 	// Max length of buffer to generate (cap)
-	MAXWORLDGENBUFFERLEN uint32 = 60
+	MAXWORLDGENBUFFERLEN uint32 = 80
 	// Min length of buffer to generate (trigger)
-	MINWORLDGENBUFFERLEN uint32  = 30
-	PLAYERWORLDSTARTX    float32 = TILEWIDTH
-	PLAYERWORLDSTARTY    float32 = TILEWIDTH * float32(WORLDBUFFERHEIGHT-20)
-	TOTALTILES           uint32  = 4
+	MINWORLDGENBUFFERLEN uint32 = 40
+	// Length of biome chunks
+	BIOMELENGTH       uint32  = 8
+	PLAYERWORLDSTARTX float32 = TILEWIDTH
+	PLAYERWORLDSTARTY float32 = TILEWIDTH * float32(WORLDBUFFERHEIGHT-20)
+	TOTALTILES        uint32  = 4
 )
 
 type World struct {
@@ -140,19 +142,20 @@ func (w *World) Draw(screen *ebiten.Image) {
 	w.camera.screenWidth = float32(screenBounds.X)
 	w.camera.screenHeight = float32(screenBounds.Y)
 	w.bg.Draw(screen)
-	if w.level.worldFrameStart > (w.level.worldFrameEnd+1)%WORLDBUFFERLEN {
-		for x := uint32(0); x < w.level.worldFrameEnd; x++ {
+
+	if w.level.toBufferIndex(w.level.worldXStart) > w.level.toBufferIndex(w.level.worldXEnd+1) {
+		for x := uint32(0); x < w.level.toBufferIndex(w.level.worldXStart); x++ {
 			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 				w.worldTiles[y][x].Draw(screen)
 			}
 		}
-		for x := w.level.worldFrameEnd; x < WORLDBUFFERLEN; x++ {
+		for x := w.level.toBufferIndex(w.level.worldXStart); x < WORLDBUFFERLEN; x++ {
 			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 				w.worldTiles[y][x].Draw(screen)
 			}
 		}
 	} else {
-		for x := w.level.worldFrameStart; x <= w.level.worldFrameEnd+1; x++ {
+		for x := w.level.toBufferIndex(w.level.worldXStart); x <= w.level.toBufferIndex(w.level.worldXEnd+1); x++ {
 			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 				w.worldTiles[y][x].Draw(screen)
 			}
@@ -249,17 +252,15 @@ func (wdl *WorldDataLoader) GetTile(id uint32) *Tile {
 type Level struct {
 	world  *World
 	perlin *perlin.Perlin
-	//curBiome *Biome
 	// Width of world in array coordinates
 	worldWidth uint32
-	// In array coordinates, the start and end of the visible world. Wraps
-	worldFrameStart uint32
-	worldFrameEnd   uint32
 	// In array coordinates, start and end of visible world. Does not wrap
 	worldXStart uint32
 	worldXEnd   uint32
 	// In array coordinates, the most recenty generated tile. Does not wrap
 	worldXGen uint32
+	// Ring buffer for biomes
+	biomes []*Biome
 }
 
 func NewLevel(world *World, worldWidth uint32) *Level {
@@ -279,36 +280,14 @@ func (l *Level) initWorld() {
 }
 
 func (l *Level) Update() {
-	// Update ring offets
-	if l.world.camera.screenWidth > 0 && l.worldFrameEnd == 0 {
-		l.worldFrameEnd = l.worldFrameStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
-		l.worldFrameEnd %= WORLDBUFFERLEN
-	}
-	// World buffer/generation stuff
 	if l.worldXEnd >= l.worldWidth {
 		l.world.canLeave = true
 		return
 	}
-	if l.world.camera.screenWidth > 0 && !l.world.camera.IsInsideCamera(float32(l.worldXStart)*TILEWIDTH+TILEWIDTH, -1) {
-		// Need to advance world buffer
-		l.worldXStart += 1
-		l.worldXEnd = l.worldXStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
-		lastTile := l.worldFrameStart
-		l.worldFrameStart += 1
-		l.worldFrameStart %= WORLDBUFFERLEN
-		l.worldFrameEnd = l.worldFrameStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
-		l.worldFrameEnd %= WORLDBUFFERLEN
-		// Need to change coordinates of blocks that just left the screen
-		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
-			var prevTile uint32
-			if lastTile == 0 {
-				prevTile = WORLDBUFFERLEN - 1
-			} else {
-				prevTile = lastTile - 1
-			}
-			l.world.worldTiles[y][lastTile].x = l.world.worldTiles[y][prevTile].x + TILEWIDTH
-		}
-	}
+	offX, _ := l.world.camera.GetRenderOffset()
+	l.worldXStart = uint32(-offX / TILEWIDTH)
+	l.worldXEnd = l.worldXStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
+
 	// Update world generation
 	l.checkWorldUpdate()
 }
@@ -319,7 +298,6 @@ func (l *Level) checkWorldUpdate() {
 	floorBase := WORLDBUFFERHEIGHT - generateAmplitude
 	// If we are MINWORLDGENBUFFERLEN away from the generated section, should generate until we are MAXWORLDGENBUFFERLEN past generated section
 	if l.worldXStart+MINWORLDGENBUFFERLEN >= l.worldXGen {
-
 		// Range of generation: l.worldXGen -> l.worldXStart + MAXWORLDGENBUFFERLEN. Typically of length MAXWORLDGENBUFFERLEN - MINWORLDGENBUFFERLEN
 		for l.worldXStart+MAXWORLDGENBUFFERLEN >= l.worldXGen {
 			// Generate terrain
@@ -328,19 +306,21 @@ func (l *Level) checkWorldUpdate() {
 			groundY := floorBase + uint32(rawY*float64(generateAmplitude))
 
 			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
+				tile := l.world.worldTiles[y][arrX]
+				tile.x = float32(l.worldXGen) * TILEWIDTH
 				if y == groundY {
 					if int(l.worldXGen) == int(l.worldWidth) {
-						l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.RockTile)
+						tile.im = l.world.gdl.GetSpriteImage(graphics.RockTile)
 					} else {
-						l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
-						l.world.worldTiles[y][arrX].isPassable = false
+						tile.im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
+						tile.isPassable = false
 					}
 				} else if y > groundY {
-					l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.DirtTile)
-					l.world.worldTiles[y][arrX].isPassable = false
+					tile.im = l.world.gdl.GetSpriteImage(graphics.DirtTile)
+					tile.isPassable = false
 				} else {
-					l.world.worldTiles[y][arrX].im = nil
-					l.world.worldTiles[y][arrX].isPassable = true
+					tile.im = nil
+					tile.isPassable = true
 				}
 			}
 			l.worldXGen++
@@ -352,40 +332,9 @@ func (l *Level) toBufferIndex(x uint32) uint32 {
 	return x % WORLDBUFFERLEN
 }
 
-/**
 // Variable length themes of tile chunks
 type Biome struct {
-	// Length of biome in tiles
-	tileLength uint32
-	// Amount of tiles traversed in biome
-	curTraversed uint32
+	common.BiomeJson
+	// Where did this biome start, in array coords
+	startX uint32
 }
-
-func (w *World) generateWorld() {
-	grass := w.gdl.GetTileImage(2)
-	sky := w.gdl.GetTileImage(4)
-	dirt := w.gdl.GetTileImage(1)
-	for y := float32(0); y < float32(WORLDBUFFERHEIGHT); y++ {
-		var row []*Tile
-		for x := float32(0); x < float32(WORLDBUFFERLEN); x++ {
-			if y == float32(WORLDBUFFERHEIGHT)-6 {
-				t := NewTile(2, x*TILEWIDTH, y*TILEWIDTH, w, grass)
-				row = append(row, t)
-			} else if y > float32(WORLDBUFFERHEIGHT)-6 {
-				t := NewTile(2, x*TILEWIDTH, y*TILEWIDTH, w, dirt)
-				row = append(row, t)
-			} else {
-				t := NewTile(3, x*TILEWIDTH, y*TILEWIDTH, w, sky)
-				t.isPassable = true
-				row = append(row, t)
-			}
-		}
-		w.worldTiles = append(w.worldTiles, row)
-	}
-}
-
-// Templates to stamp during world generation
-type TileChunk struct {
-}
-
-*/
