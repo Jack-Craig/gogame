@@ -259,16 +259,25 @@ type Level struct {
 	worldXEnd   uint32
 	// In array coordinates, the most recenty generated tile. Does not wrap
 	worldXGen uint32
-	// Ring buffer for biomes
-	biomes []*Biome
+	// Ring array for biomes
+	biomes      []Biome
+	curBiomeIdx int
+	biomeData   common.BiomeDataJson
 }
 
 func NewLevel(world *World, worldWidth uint32) *Level {
-	return &Level{
-		world:      world,
-		worldWidth: worldWidth,
-		perlin:     perlin.NewPerlin(2, 2, 3, rand.Int63()),
+	l := Level{
+		world:       world,
+		worldWidth:  worldWidth,
+		perlin:      perlin.NewPerlin(2, 2, 3, rand.Int63()),
+		curBiomeIdx: 0,
+		biomes:      make([]Biome, MAXWORLDGENBUFFERLEN/BIOMELENGTH+1),
 	}
+	common.LoadJSON("res/world/biomes.json", &l.biomeData)
+	l.biomes[0].biomeType = "start"
+	l.biomes[0].floorHeight = WORLDBUFFERHEIGHT / 2
+	l.biomes[0].BiomeJson = l.biomeData.Biomes["start"]
+	return &l
 }
 
 func (l *Level) initWorld() {
@@ -288,35 +297,61 @@ func (l *Level) Update() {
 	l.worldXStart = uint32(-offX / TILEWIDTH)
 	l.worldXEnd = l.worldXStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
 
+	//log.Printf("CurBiome: %s\n", l.biomes[int(l.worldXStart/BIOMELENGTH)%len(l.biomes)].biomeType)
+
 	// Update world generation
 	l.checkWorldUpdate()
 }
 
 func (l *Level) checkWorldUpdate() {
-	// Check if we should generate more shit
-	generateAmplitude := uint32(8)
-	floorBase := WORLDBUFFERHEIGHT - generateAmplitude
 	// If we are MINWORLDGENBUFFERLEN away from the generated section, should generate until we are MAXWORLDGENBUFFERLEN past generated section
 	if l.worldXStart+MINWORLDGENBUFFERLEN >= l.worldXGen {
 		// Range of generation: l.worldXGen -> l.worldXStart + MAXWORLDGENBUFFERLEN. Typically of length MAXWORLDGENBUFFERLEN - MINWORLDGENBUFFERLEN
 		for l.worldXStart+MAXWORLDGENBUFFERLEN >= l.worldXGen {
+			// Check for current biome, and if we need to make a new one
+			curBiome := &l.biomes[l.curBiomeIdx]
+			floorBase := curBiome.floorHeight
+			if curBiome.startX+BIOMELENGTH < l.worldXGen {
+				// This biome has finished being generated!
+				l.curBiomeIdx++
+				l.curBiomeIdx %= len(l.biomes)
+				// Generate new biome!
+				randIdx := int(rand.Uint32()) % len(curBiome.BiomeJson.NextTo)
+				newType := curBiome.BiomeJson.NextTo[randIdx]
+				newCur := &l.biomes[l.curBiomeIdx]
+				newCur.BiomeJson = l.biomeData.Biomes[newType]
+				newCur.startX = l.worldXGen
+				newCur.biomeType = newType
+				curBiome = newCur
+			}
 			// Generate terrain
 			arrX := l.toBufferIndex(l.worldXGen)
-			rawY := l.perlin.Noise1D(float64(arrX) / 15.0)
+			generateAmplitude := curBiome.GenAmplitude
+
+			rawY := l.perlin.Noise1D(float64(arrX) / (15.0 * curBiome.GenFrequency))
 			groundY := floorBase + uint32(rawY*float64(generateAmplitude))
+			curBiome.floorHeight = floorBase
+			if curBiome.startX+BIOMELENGTH < l.worldXGen+1 {
+				// This is the last square in the biome
+				curBiome.floorHeight = groundY
+			}
+
+			// TODO: Make these actual tile objects or sm
+			surfaceIm := l.world.gdl.GetSpriteImage(graphics.GrassTile)
+			subsurfaceIm := l.world.gdl.GetSpriteImage(graphics.DirtTile)
+			if curBiome.biomeType == "rocky" {
+				surfaceIm = l.world.gdl.GetSpriteImage(graphics.RockTile)
+				subsurfaceIm = l.world.gdl.GetSpriteImage(graphics.RockTile)
+			}
 
 			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
 				tile := l.world.worldTiles[y][arrX]
 				tile.x = float32(l.worldXGen) * TILEWIDTH
 				if y == groundY {
-					if int(l.worldXGen) == int(l.worldWidth) {
-						tile.im = l.world.gdl.GetSpriteImage(graphics.RockTile)
-					} else {
-						tile.im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
-						tile.isPassable = false
-					}
+					tile.im = surfaceIm
+					tile.isPassable = false
 				} else if y > groundY {
-					tile.im = l.world.gdl.GetSpriteImage(graphics.DirtTile)
+					tile.im = subsurfaceIm
 					tile.isPassable = false
 				} else {
 					tile.im = nil
@@ -335,6 +370,10 @@ func (l *Level) toBufferIndex(x uint32) uint32 {
 // Variable length themes of tile chunks
 type Biome struct {
 	common.BiomeJson
+	// string key in BiomeDataJson
+	biomeType string
 	// Where did this biome start, in array coords
 	startX uint32
+	// At the end of this biome, what is the floor height
+	floorHeight uint32
 }

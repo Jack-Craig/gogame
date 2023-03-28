@@ -141,7 +141,7 @@ func NewPlayer(id uint32, name string, w *World, im *ebiten.Image, pip *input.Pl
 	return &Player{
 		Entity: Entity{
 			GameObject: GameObject{
-				id, 0, 0, TILEWIDTH, TILEWIDTH, im, w, false, 0,
+				id, 0, 0, TILEWIDTH - 1, TILEWIDTH - 1, im, w, false, 0,
 			},
 			vx:                0,
 			vy:                0,

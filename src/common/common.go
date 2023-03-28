@@ -16,6 +16,8 @@ type BiomeJson struct {
 	NextTo          []string `json:"nextTo"`
 	SurfaceTiles    int      `json:"surfaceTiles"`
 	SubSurfaceTiles int      `json:"subsurfaceTiles"`
+	GenAmplitude    uint32   `json:"genAmplitude"`
+	GenFrequency    float64  `json:"genFrequency"`
 }
 
 type BiomeDataJson struct {
@@ -49,20 +51,4 @@ func Remove[T any](slice []T, index int) []T {
 	(slice)[index] = (slice)[l-1]
 	slice = slice[:l-1]
 	return slice
-}
-
-type RingArray struct {
-	arr []any
-}
-
-func NewRingArray() *RingArray {
-	return &RingArray{}
-}
-
-func (ra *RingArray) Get() {
-
-}
-
-func (ra *RingArray) Set() {
-
 }

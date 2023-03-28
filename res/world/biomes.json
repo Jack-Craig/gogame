@@ -1,14 +1,25 @@
 {
     "biomes": {
-        "plains": {
-            "nextTo": ["rocky"],
+        "start": {
+            "nextTo": ["rocky", "plains"],
             "surfaceTile": 1,
-            "subsurfaceTile": 0
+            "subsurfaceTile": 0,
+            "genAmplitude": 0,
+            "genFrequency": 1
+        },
+        "plains": {
+            "nextTo": ["plains", "rocky"],
+            "surfaceTile": 1,
+            "subsurfaceTile": 0,
+            "genAmplitude": 8,
+            "genFrequency": 1
         },
         "rocky": {
-            "nextTo": ["plains"],
+            "nextTo": ["plains", "rocky"],
             "surfaceTile": 2,
-            "subsurfaceTile": 2
+            "subsurfaceTile": 2,
+            "genAmplitude": 8,
+            "genFrequency": 0.1
         }
     }
 }
