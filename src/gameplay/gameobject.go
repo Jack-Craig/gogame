@@ -63,6 +63,7 @@ type Entity struct {
 	health, gravityMultiplier float32
 	// Maintained by world every Update()
 	collidingEntities []*Entity
+	immuneToGuns      bool
 }
 
 func (e *Entity) Update() {
@@ -147,9 +148,10 @@ func NewPlayer(id uint32, name string, w *World, im *ebiten.Image, pip *input.Pl
 			vy:                0,
 			stayWithinCamera:  true,
 			gravityMultiplier: 1,
+			immuneToGuns:      true,
 		},
 		pi:       pip,
-		fireRate: 750,
+		fireRate: 100,
 		name:     name,
 		isDead:   true,
 	}
@@ -185,7 +187,7 @@ func (p *Player) Shoot() {
 		bulletSpeed := float32(30)
 
 		p.lastShotTime = curTime
-		p := NewBullet(p.x, p.y+p.height/3, xDir*bulletSpeed, yDir*bulletSpeed, 10, p.w)
+		p := NewBullet(p.x+p.width/2, p.y+p.height/3, xDir*bulletSpeed, yDir*bulletSpeed, 10, p.w)
 		p.w.AddProjectile(p)
 	}
 }
@@ -212,10 +214,17 @@ func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *Wo
 }
 
 func NewBullet(x, y, vx, vy, damage float32, w *World) *Projectile {
-	return NewProjectile(0, x, y, 25, 8, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
+	return NewProjectile(0, x, y, 18, 4, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
 }
 
 func (p *Projectile) Update() {
 	xCol, yCol := p.WillCollideWithWorld()
 	p.shouldRemove = xCol || yCol
+	for _, e := range p.collidingEntities {
+		if e.immuneToGuns {
+			continue
+		}
+		e.shouldRemove = true
+		p.shouldRemove = true
+	}
 }

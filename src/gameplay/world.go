@@ -3,6 +3,7 @@ package gameplay
 import (
 	"fmt"
 	"image/color"
+	"log"
 	"math/rand"
 
 	"github.com/Jack-Craig/gogame/src/common"
@@ -36,6 +37,7 @@ type World struct {
 	Handler
 	camera                                 *Camera
 	gameObjects                            []*GameObject
+	zombieObjects                          []*Zombie
 	entityObjects                          []*Entity
 	playerObjects                          []*Player
 	projectiles                            []*Projectile
@@ -72,6 +74,7 @@ func (w *World) generateLevel() {
 }
 
 func (w *World) Update() {
+	log.Printf("N Entities: %d\n", len(w.entityObjects))
 	w.camera.Update()
 	w.level.Update()
 
@@ -86,17 +89,31 @@ func (w *World) Update() {
 		}
 		player.Update()
 	}
+	for i, gObj := range w.gameObjects {
+		if gObj.shouldRemove {
+			common.Remove(&w.gameObjects, i)
+			continue
+		}
+	}
+
+	for i, zombie := range w.zombieObjects {
+		zombie.Update()
+		if zombie.shouldRemove {
+			common.Remove(&w.zombieObjects, i)
+			continue
+		}
+	}
 
 	for i, projectile := range w.projectiles {
 		projectile.Update()
 		if projectile.shouldRemove {
-			common.Remove(w.projectiles, i)
+			common.Remove(&w.projectiles, i)
 			continue
 		}
 	}
 	for i, entity := range w.entityObjects {
 		if entity.shouldRemove {
-			common.Remove(w.entityObjects, i)
+			common.Remove(&w.entityObjects, i)
 			continue
 		}
 		entity.AddVel(0, w.gravity*entity.gravityMultiplier)
@@ -105,16 +122,20 @@ func (w *World) Update() {
 	}
 	for i := 0; i < len(w.entityObjects); i++ {
 		ei := w.entityObjects[i]
-		for j := i + 1; j < len(w.entityObjects); j++ {
+		for j := 0; j < len(w.entityObjects); j++ {
+			if i == j {
+				continue
+			}
 			ej := w.entityObjects[j]
 			// Top left
-			isCollision := ei.x >= ej.x && ei.x <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height
+			topLeft := ei.x >= ej.x && ei.x <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height
 			// Top right
-			isCollision = isCollision || (ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height)
+			topRight := ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height
 			// Bottom left
-			isCollision = isCollision || (ei.x > ej.x && ei.x <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height)
+			bottomLeft := ei.x > ej.x && ei.x <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height
 			// Bottom right
-			isCollision = isCollision || (ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height)
+			bottomRight := ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height
+			isCollision := topLeft || topRight || bottomLeft || bottomRight
 			if isCollision {
 				ei.collidingEntities = append(ei.collidingEntities, ej)
 				ej.collidingEntities = append(ej.collidingEntities, ei)
@@ -162,11 +183,7 @@ func (w *World) Draw(screen *ebiten.Image) {
 		}
 	}
 
-	for i, gobj := range w.gameObjects {
-		if gobj.shouldRemove {
-			w.gameObjects = common.Remove(w.gameObjects, i)
-			continue
-		}
+	for _, gobj := range w.gameObjects {
 		gobj.Draw(screen)
 	}
 	for _, playerObj := range w.playerObjects {
@@ -336,7 +353,7 @@ func (l *Level) checkWorldUpdate() {
 				curBiome.floorHeight = groundY
 			}
 
-			// TODO: Make these actual tile objects or sm
+			// TOD bO: Make these actual tile objects or sm
 			surfaceIm := l.world.gdl.GetSpriteImage(graphics.GrassTile)
 			subsurfaceIm := l.world.gdl.GetSpriteImage(graphics.DirtTile)
 			if curBiome.biomeType == "rocky" {
@@ -357,6 +374,13 @@ func (l *Level) checkWorldUpdate() {
 					tile.im = nil
 					tile.isPassable = true
 				}
+			}
+			// Maybe zombie?
+			if rand.Intn(10) < 1 {
+				x := float32(l.worldXGen * uint32(TILEWIDTH))
+				z := NewBaseZombie(x, float32(groundY)*TILEWIDTH-TILEWIDTH, l.world)
+				l.world.zombieObjects = append(l.world.zombieObjects, z)
+				l.world.AddEntity(&z.Entity)
 			}
 			l.worldXGen++
 		}

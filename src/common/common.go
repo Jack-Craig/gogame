@@ -43,12 +43,12 @@ func LoadJSON[T any](filePath string, container T) {
 	json.Unmarshal(jsonFileBytes, container)
 }
 
-func Remove[T any](slice []T, index int) []T {
-	l := len(slice)
-	if l >= index {
-		return slice
+func Remove[T any](slice *[]T, index int) []T {
+	l := len(*slice)
+	if l <= index {
+		return *slice
 	}
-	(slice)[index] = (slice)[l-1]
-	slice = slice[:l-1]
-	return slice
+	(*slice)[index] = (*slice)[l-1]
+	(*slice) = (*slice)[:l-1]
+	return *slice
 }
