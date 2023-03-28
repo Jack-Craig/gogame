@@ -1,0 +1,14 @@
+{
+    "biomes": {
+        "plains": {
+            "nextTo": ["rocky"],
+            "surfaceTile": 1,
+            "subsurfaceTile": 0
+        },
+        "rocky": {
+            "nextTo": ["plains"],
+            "surfaceTile": 2,
+            "subsurfaceTile": 2
+        }
+    }
+}

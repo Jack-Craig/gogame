@@ -21,11 +21,13 @@ const (
 	WORLDBUFFERLEN uint32 = 120
 	// Total height of world tile 2d array
 	WORLDBUFFERHEIGHT uint32 = 30
-	// Length of world array to generate the world for
-	WORLDGENBUFFERLEN uint32  = 60
-	PLAYERWORLDSTARTX float32 = TILEWIDTH
-	PLAYERWORLDSTARTY float32 = TILEWIDTH * float32(WORLDBUFFERHEIGHT-20)
-	TOTALTILES        uint32  = 4
+	// Max length of buffer to generate (cap)
+	MAXWORLDGENBUFFERLEN uint32 = 60
+	// Min length of buffer to generate (trigger)
+	MINWORLDGENBUFFERLEN uint32  = 30
+	PLAYERWORLDSTARTX    float32 = TILEWIDTH
+	PLAYERWORLDSTARTY    float32 = TILEWIDTH * float32(WORLDBUFFERHEIGHT-20)
+	TOTALTILES           uint32  = 4
 )
 
 type World struct {
@@ -248,20 +250,19 @@ type Level struct {
 	world  *World
 	perlin *perlin.Perlin
 	//curBiome *Biome
-	worldWidth float32
-	// In array coordinates, the start and end of the visible world. Can wrap
+	// Width of world in array coordinates
+	worldWidth uint32
+	// In array coordinates, the start and end of the visible world. Wraps
 	worldFrameStart uint32
 	worldFrameEnd   uint32
-	// In world coordinates, the left most coordinate
-	worldXStart float32
-	worldXEnd   float32
-	// In world coordinates, the most recenty generated tile
-	worldXGen float32
-	// In array coordinates, the end of generated space
-	worldGeneratedEnd uint32
+	// In array coordinates, start and end of visible world. Does not wrap
+	worldXStart uint32
+	worldXEnd   uint32
+	// In array coordinates, the most recenty generated tile. Does not wrap
+	worldXGen uint32
 }
 
-func NewLevel(world *World, worldWidth float32) *Level {
+func NewLevel(world *World, worldWidth uint32) *Level {
 	return &Level{
 		world:      world,
 		worldWidth: worldWidth,
@@ -284,14 +285,14 @@ func (l *Level) Update() {
 		l.worldFrameEnd %= WORLDBUFFERLEN
 	}
 	// World buffer/generation stuff
-	if l.worldXEnd > float32(l.worldWidth) {
+	if l.worldXEnd >= l.worldWidth {
 		l.world.canLeave = true
 		return
 	}
-	if l.world.camera.screenWidth > 0 && !l.world.camera.IsInsideCamera(l.worldXStart*TILEWIDTH+TILEWIDTH, -1) {
+	if l.world.camera.screenWidth > 0 && !l.world.camera.IsInsideCamera(float32(l.worldXStart)*TILEWIDTH+TILEWIDTH, -1) {
 		// Need to advance world buffer
 		l.worldXStart += 1
-		l.worldXEnd = l.worldXStart + float32(l.world.camera.screenWidth/TILEWIDTH)
+		l.worldXEnd = l.worldXStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
 		lastTile := l.worldFrameStart
 		l.worldFrameStart += 1
 		l.worldFrameStart %= WORLDBUFFERLEN
@@ -308,6 +309,7 @@ func (l *Level) Update() {
 			l.world.worldTiles[y][lastTile].x = l.world.worldTiles[y][prevTile].x + TILEWIDTH
 		}
 	}
+	// Update world generation
 	l.checkWorldUpdate()
 }
 
@@ -315,31 +317,39 @@ func (l *Level) checkWorldUpdate() {
 	// Check if we should generate more shit
 	generateAmplitude := uint32(8)
 	floorBase := WORLDBUFFERHEIGHT - generateAmplitude
-	for (l.worldFrameStart+WORLDGENBUFFERLEN)%WORLDBUFFERLEN != l.worldGeneratedEnd%WORLDBUFFERLEN {
-		l.worldXGen++
-		arrX := l.worldGeneratedEnd
-		worldX := uint32(l.world.worldTiles[0][l.worldGeneratedEnd].x)
-		rawY := l.perlin.Noise1D(float64(worldX) / float64(TILEWIDTH*15))
-		groundY := floorBase + uint32(rawY*float64(generateAmplitude))
-		for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
-			if y == groundY {
-				if int(l.worldXGen) == int(l.worldWidth) {
-					l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.RockTile)
-				} else {
-					l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
+	// If we are MINWORLDGENBUFFERLEN away from the generated section, should generate until we are MAXWORLDGENBUFFERLEN past generated section
+	if l.worldXStart+MINWORLDGENBUFFERLEN >= l.worldXGen {
+
+		// Range of generation: l.worldXGen -> l.worldXStart + MAXWORLDGENBUFFERLEN. Typically of length MAXWORLDGENBUFFERLEN - MINWORLDGENBUFFERLEN
+		for l.worldXStart+MAXWORLDGENBUFFERLEN >= l.worldXGen {
+			// Generate terrain
+			arrX := l.toBufferIndex(l.worldXGen)
+			rawY := l.perlin.Noise1D(float64(arrX) / 15.0)
+			groundY := floorBase + uint32(rawY*float64(generateAmplitude))
+
+			for y := uint32(0); y < WORLDBUFFERHEIGHT; y++ {
+				if y == groundY {
+					if int(l.worldXGen) == int(l.worldWidth) {
+						l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.RockTile)
+					} else {
+						l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.GrassTile)
+						l.world.worldTiles[y][arrX].isPassable = false
+					}
+				} else if y > groundY {
+					l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.DirtTile)
 					l.world.worldTiles[y][arrX].isPassable = false
+				} else {
+					l.world.worldTiles[y][arrX].im = nil
+					l.world.worldTiles[y][arrX].isPassable = true
 				}
-			} else if y > groundY {
-				l.world.worldTiles[y][arrX].im = l.world.gdl.GetSpriteImage(graphics.DirtTile)
-				l.world.worldTiles[y][arrX].isPassable = false
-			} else {
-				l.world.worldTiles[y][arrX].im = nil
-				l.world.worldTiles[y][arrX].isPassable = true
 			}
+			l.worldXGen++
 		}
-		l.worldGeneratedEnd++
-		l.worldGeneratedEnd %= WORLDBUFFERLEN
 	}
+}
+
+func (l *Level) toBufferIndex(x uint32) uint32 {
+	return x % WORLDBUFFERLEN
 }
 
 /**

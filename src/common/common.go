@@ -12,6 +12,16 @@ type Pair struct {
 	Y int `json:"y"`
 }
 
+type BiomeJson struct {
+	NextTo          []string `json:"nextTo"`
+	SurfaceTiles    int      `json:"surfaceTiles"`
+	SubSurfaceTiles int      `json:"subsurfaceTiles"`
+}
+
+type BiomeDataJson struct {
+	Biomes map[string]BiomeJson `json:"biomes"`
+}
+
 type PlayerDataJson struct {
 	Players map[string]struct {
 		ImageId int `json:"imageId"`
