@@ -3,7 +3,6 @@ package gameplay
 import (
 	"fmt"
 	"image/color"
-	"log"
 	"math/rand"
 
 	"github.com/Jack-Craig/gogame/src/common"
@@ -74,7 +73,6 @@ func (w *World) generateLevel() {
 }
 
 func (w *World) Update() {
-	log.Printf("N Entities: %d\n", len(w.entityObjects))
 	w.camera.Update()
 	w.level.Update()
 
@@ -120,13 +118,38 @@ func (w *World) Update() {
 		entity.Update()
 		entity.collidingEntities = nil
 	}
+
 	for i := 0; i < len(w.entityObjects); i++ {
 		ei := w.entityObjects[i]
-		for j := 0; j < len(w.entityObjects); j++ {
-			if i == j {
-				continue
-			}
+		eiX, eiY, eiWidth, eiHeight := float64(ei.x), float64(ei.y), float64(ei.width), float64(ei.height)
+		for j := i + 1; j < len(w.entityObjects); j++ {
 			ej := w.entityObjects[j]
+			// Collision
+			isCollision := true
+			ejX, ejY, ejWidth, ejHeight := float64(ej.x), float64(ej.y), float64(ej.width), float64(ej.height)
+			for _, norm := range ei.normals {
+				mini, maxi := common.MinMaxProjection(eiX, eiY, eiWidth, eiHeight, norm)
+				minj, maxj := common.MinMaxProjection(ejX, ejY, ejWidth, ejHeight, norm)
+
+				if maxi < minj || maxj < mini {
+					isCollision = false
+					break
+				}
+			}
+
+			for _, norm := range ej.normals {
+				if !isCollision {
+					break
+				}
+				mini, maxi := common.MinMaxProjection(eiX, eiY, eiWidth, eiHeight, norm)
+				minj, maxj := common.MinMaxProjection(ejX, ejY, ejWidth, ejHeight, norm)
+
+				if maxi < minj || maxj < mini {
+					isCollision = false
+					break
+				}
+			}
+			/**
 			// Top left
 			topLeft := ei.x >= ej.x && ei.x <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height
 			// Top right
@@ -136,10 +159,12 @@ func (w *World) Update() {
 			// Bottom right
 			bottomRight := ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height
 			isCollision := topLeft || topRight || bottomLeft || bottomRight
+			*/
 			if isCollision {
 				ei.collidingEntities = append(ei.collidingEntities, ej)
 				ej.collidingEntities = append(ej.collidingEntities, ei)
 			}
+
 		}
 	}
 }
@@ -313,8 +338,6 @@ func (l *Level) Update() {
 	offX, _ := l.world.camera.GetRenderOffset()
 	l.worldXStart = uint32(-offX / TILEWIDTH)
 	l.worldXEnd = l.worldXStart + uint32(l.world.camera.screenWidth/TILEWIDTH)
-
-	//log.Printf("CurBiome: %s\n", l.biomes[int(l.worldXStart/BIOMELENGTH)%len(l.biomes)].biomeType)
 
 	// Update world generation
 	l.checkWorldUpdate()

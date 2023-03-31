@@ -4,6 +4,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/Jack-Craig/gogame/src/common"
 	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/Jack-Craig/gogame/src/input"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -17,12 +18,35 @@ type GameObject struct {
 	w                   *World
 	shouldRemove        bool
 	theta               float64
+	normals             []common.Vec2
 }
 
-func NewGameObject(id uint32, x, y, width, height float32, w *World, im *ebiten.Image) *GameObject {
-	return &GameObject{
-		id, x, y, width, height, im, w, false, 0,
+func NewGameObject(id uint32, x, y, width, height float32, theta float64, w *World, im *ebiten.Image) *GameObject {
+	gameObj := &GameObject{
+		id, x, y, width, height, im, w, false, theta, nil,
 	}
+	gameObj.normals = make([]common.Vec2, 4)
+	gameObj.CalcNormals()
+	return gameObj
+}
+
+func (gobj *GameObject) CalcNormals() {
+	projAxis := common.Normalize(common.NewVec2(1, math.Tan(gobj.theta)))
+
+	tl := common.NewVec2(float64(gobj.x), float64(gobj.y))
+	tr := common.NewVec2(float64(gobj.x+gobj.width), float64(gobj.y))
+	br := common.NewVec2(float64(gobj.x+gobj.width), float64(gobj.y+gobj.height))
+	bl := common.NewVec2(float64(gobj.x), float64(gobj.y+gobj.height))
+
+	tEdge := common.Normal(common.Normalize(common.NewVec2(1, common.Dot(projAxis, common.Sub(tl, tr)))))
+	rEdge := common.Normal(common.Normalize(common.NewVec2(1, common.Dot(projAxis, common.Sub(tr, br)))))
+	bEdge := common.Normal(common.Normalize(common.NewVec2(1, common.Dot(projAxis, common.Sub(br, bl)))))
+	lEdge := common.Normal(common.Normalize(common.NewVec2(1, common.Dot(projAxis, common.Sub(bl, tl)))))
+
+	gobj.normals[0] = tEdge
+	gobj.normals[1] = rEdge
+	gobj.normals[2] = bEdge
+	gobj.normals[3] = lEdge
 }
 
 func (gobj *GameObject) Draw(screen *ebiten.Image) {
@@ -32,12 +56,12 @@ func (gobj *GameObject) Draw(screen *ebiten.Image) {
 	op := ebiten.DrawImageOptions{}
 	camOffX, camOffY := gobj.w.camera.GetRenderOffset()
 	w, h := gobj.im.Size()
-	op.GeoM.Scale(float64(gobj.width/float32(w)), float64(float32(gobj.height/float32(h))))
 
+	op.GeoM.Scale(float64(gobj.width/float32(w)), float64(float32(gobj.height/float32(h))))
 	op.GeoM.Rotate(gobj.theta)
 
-	op.GeoM.Translate(float64(camOffX), float64(camOffY))
 	op.GeoM.Translate(float64(gobj.x), float64(gobj.y))
+	op.GeoM.Translate(float64(camOffX), float64(camOffY))
 	screen.DrawImage(gobj.im, &op)
 }
 
@@ -49,7 +73,7 @@ type Tile struct {
 
 func NewTile(id uint32, x, y float32, w *World, im *ebiten.Image) *Tile {
 	return &Tile{
-		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false, 0},
+		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false, 0, nil},
 		false,
 		false,
 	}
@@ -106,19 +130,25 @@ func (e *Entity) Update() {
 	} else {
 		e.y += e.vy
 	}
+
+	// TODO: Only update when theta changes
+	// e.CalcNormals()
+
 }
 
 func (e *Entity) WillCollideWithWorld() (bool, bool) {
-	expectedX := e.x + e.vx
-	if e.vx > 0 {
-		expectedX += e.width
-	}
-	collisionX := e.w.IsWorldCollision(expectedX, e.y) || e.w.IsWorldCollision(expectedX, e.y+e.height)
-	expectedY := e.y + e.vy
-	if e.vy > 0 {
-		expectedY += e.height
-	}
-	collisionY := e.w.IsWorldCollision(e.x, expectedY) || e.w.IsWorldCollision(e.x+e.width, expectedY)
+	// Check collisions on left top and bottom if vx < 0, else right top and bottom
+	// Check collisions on left and right bottom if by > 0, else left and right top
+	// X and Y will stay the same, bottom Y and right X will change
+	cosTheta, sinTheta := math.Cos(e.theta), math.Sin(e.theta)
+	baseX := float64(e.x)
+	baseY := float64(e.y)
+	tl := common.NewVec2(baseX, baseY)
+	tr := common.NewVec2(baseX+float64(e.width)*cosTheta, baseY)
+	bl := common.NewVec2(baseX, baseY+float64(e.height)*cosTheta)
+	br := common.NewVec2(baseX+float64(e.width)*cosTheta-float64(e.height)*sinTheta, baseY+float64(e.height)*cosTheta+float64(e.width)*sinTheta)
+	collisionX := e.w.IsWorldCollision(float32(tl.X)+e.vx, float32(tl.Y)) || e.w.IsWorldCollision(float32(tr.X)+e.vx, float32(tr.Y)) || e.w.IsWorldCollision(float32(bl.X)+e.vx, float32(bl.Y)) || e.w.IsWorldCollision(float32(br.X)+e.vx, float32(br.Y))
+	collisionY := e.w.IsWorldCollision(float32(tl.X), float32(tl.Y)+e.vy) || e.w.IsWorldCollision(float32(tr.X), float32(tr.Y)+e.vy) || e.w.IsWorldCollision(float32(bl.X), float32(bl.Y)+e.vy) || e.w.IsWorldCollision(float32(br.X), float32(br.Y)+e.vy)
 	return collisionX, collisionY
 }
 
@@ -141,9 +171,7 @@ type Player struct {
 func NewPlayer(id uint32, name string, w *World, im *ebiten.Image, pip *input.PlayerInput) *Player {
 	return &Player{
 		Entity: Entity{
-			GameObject: GameObject{
-				id, 0, 0, TILEWIDTH - 1, TILEWIDTH - 1, im, w, false, 0,
-			},
+			GameObject:        *NewGameObject(id, 0, 0, TILEWIDTH-1, TILEWIDTH-1, 0, w, im),
 			vx:                0,
 			vy:                0,
 			stayWithinCamera:  true,
@@ -184,7 +212,7 @@ func (p *Player) Shoot() {
 		xDir /= m
 		yDir /= m
 
-		bulletSpeed := float32(30)
+		bulletSpeed := float32(5)
 
 		p.lastShotTime = curTime
 		p := NewBullet(p.x+p.width/2, p.y+p.height/3, xDir*bulletSpeed, yDir*bulletSpeed, 10, p.w)
@@ -200,21 +228,20 @@ type Projectile struct {
 func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *World, im *ebiten.Image) *Projectile {
 	return &Projectile{
 		Entity: Entity{
-			GameObject: GameObject{
-				id: id, x: x, y: y, width: width, height: height, im: im, w: w, theta: math.Atan2(float64(vy), float64(vx)),
-			},
+			GameObject:        *NewGameObject(id, x, y, width, height, math.Atan2(float64(vy), float64(vx)), w, im),
 			vx:                vx,
 			vy:                vy,
 			stayWithinCamera:  false,
 			health:            0,
 			collidingEntities: nil,
+			immuneToGuns:      true,
 		},
 		damage: damage,
 	}
 }
 
 func NewBullet(x, y, vx, vy, damage float32, w *World) *Projectile {
-	return NewProjectile(0, x, y, 18, 4, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
+	return NewProjectile(2, x, y, 18, 4, vx, vy, damage, w, w.gdl.GetSpriteImage(graphics.Bullet))
 }
 
 func (p *Projectile) Update() {

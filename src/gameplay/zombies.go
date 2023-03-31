@@ -16,7 +16,7 @@ func NewZombie(x, y float32, world *World, ai ZombieAI) *Zombie {
 	z := &Zombie{}
 	ai.Init(z)
 	z.zai = ai
-	z.Entity.GameObject = *NewGameObject(0, x, y, TILEWIDTH-1, TILEWIDTH-1, world, world.gdl.GetSpriteImage(graphics.Skull))
+	z.Entity.GameObject = *NewGameObject(10, x, y, TILEWIDTH-1, TILEWIDTH-1, 0, world, world.gdl.GetSpriteImage(graphics.Bullet))
 	z.Entity.gravityMultiplier = 1
 	return z
 }
@@ -49,7 +49,6 @@ func (zai *BaseZombieAI) Init(z *Zombie) {
 }
 
 func (zai *BaseZombieAI) Update() {
-
 	if zai.p == nil {
 		// Get nearest player
 		var nearestPlayer *Player
