@@ -19,11 +19,12 @@ type GameObject struct {
 	shouldRemove        bool
 	theta               float64
 	normals             []common.Vec2
+	hasAnimation        bool
 }
 
-func NewGameObject(id uint32, x, y, width, height float32, theta float64, w *World, im *ebiten.Image) *GameObject {
+func NewGameObject(id uint32, x, y, width, height float32, theta float64, w *World, im *ebiten.Image, hasAnimation bool) *GameObject {
 	gameObj := &GameObject{
-		id, x, y, width, height, im, w, false, theta, nil,
+		id, x, y, width, height, im, w, false, theta, nil, hasAnimation,
 	}
 	gameObj.normals = make([]common.Vec2, 4)
 	gameObj.CalcNormals()
@@ -50,7 +51,7 @@ func (gobj *GameObject) CalcNormals() {
 }
 
 func (gobj *GameObject) Draw(screen *ebiten.Image) {
-	if gobj.im == nil {
+	if gobj.im == nil || gobj.hasAnimation {
 		return
 	}
 	op := ebiten.DrawImageOptions{}
@@ -73,7 +74,7 @@ type Tile struct {
 
 func NewTile(id uint32, x, y float32, w *World, im *ebiten.Image) *Tile {
 	return &Tile{
-		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false, 0, nil},
+		GameObject{id, x, y, TILEWIDTH, TILEWIDTH, im, w, false, 0, nil, false},
 		false,
 		false,
 	}
@@ -88,6 +89,9 @@ type Entity struct {
 	// Maintained by world every Update()
 	collidingEntities []*Entity
 	immuneToGuns      bool
+	walkAnimation     graphics.Animation
+	idleAnimation     graphics.Animation
+	facingDir         common.Vec2
 }
 
 func (e *Entity) Update() {
@@ -101,6 +105,11 @@ func (e *Entity) Update() {
 		e.vy = MAXVEL
 	} else if e.vy < 0 && e.vy < -MAXVEL {
 		e.vy = -MAXVEL
+	}
+	if e.vx > 0 {
+		e.facingDir.X = 1
+	} else if e.vx < 0 {
+		e.facingDir.X = -1
 	}
 	// World collision
 	expectedX := e.x + e.vx
@@ -152,6 +161,34 @@ func (e *Entity) WillCollideWithWorld() (bool, bool) {
 	return collisionX, collisionY
 }
 
+func (e *Entity) Draw(screen *ebiten.Image) {
+	if !e.hasAnimation {
+		return
+	}
+	op := ebiten.DrawImageOptions{}
+	camOffX, camOffY := e.w.camera.GetRenderOffset()
+	//w, h := TILEWIDTH, TILEWIDTH
+
+	op.GeoM.Scale(float64(e.width/float32(24)), float64(float32(e.height/float32(24))))
+	if e.facingDir.X < 0 {
+		// Facing left
+		op.GeoM.Scale(-1, 1)
+		op.GeoM.Translate(float64(e.width), 0)
+	}
+
+	op.GeoM.Rotate(e.theta)
+
+	op.GeoM.Translate(float64(e.x), float64(e.y))
+	op.GeoM.Translate(float64(camOffX), float64(camOffY))
+
+	// Animation shiz
+	if e.vx != 0 {
+		e.walkAnimation.Draw(screen, &op)
+	} else {
+		e.idleAnimation.Draw(screen, &op)
+	}
+}
+
 func (e *Entity) AddVel(dx, dy float32) {
 	e.vx += dx
 	e.vy += dy
@@ -171,7 +208,7 @@ type Player struct {
 func NewPlayer(id uint32, name string, w *World, im *ebiten.Image, pip *input.PlayerInput) *Player {
 	return &Player{
 		Entity: Entity{
-			GameObject:        *NewGameObject(id, 0, 0, TILEWIDTH-1, TILEWIDTH-1, 0, w, im),
+			GameObject:        *NewGameObject(id, 0, 0, TILEWIDTH-1, TILEWIDTH-1, 0, w, im, true),
 			vx:                0,
 			vy:                0,
 			stayWithinCamera:  true,
@@ -206,13 +243,17 @@ func (p *Player) Update() {
 func (p *Player) Shoot() {
 	curTime := time.Now().UnixMilli()
 	if p.lastShotTime < curTime-p.fireRate {
-
 		yDir, xDir := p.pi.GetAxes()
-		m := float32(math.Sqrt(float64(xDir*xDir + yDir*yDir)))
-		xDir /= m
-		yDir /= m
+		if math.Abs(float64(yDir)) < .05 && math.Abs(float64(xDir)) < .05 {
+			yDir = 0
+			xDir = float32(p.facingDir.X)
+		} else {
+			m := float32(math.Sqrt(float64(yDir*yDir + xDir*xDir)))
+			yDir /= m
+			xDir /= m
+		}
 
-		bulletSpeed := float32(5)
+		bulletSpeed := float32(30)
 
 		p.lastShotTime = curTime
 		p := NewBullet(p.x+p.width/2, p.y+p.height/3, xDir*bulletSpeed, yDir*bulletSpeed, 10, p.w)
@@ -228,7 +269,7 @@ type Projectile struct {
 func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *World, im *ebiten.Image) *Projectile {
 	return &Projectile{
 		Entity: Entity{
-			GameObject:        *NewGameObject(id, x, y, width, height, math.Atan2(float64(vy), float64(vx)), w, im),
+			GameObject:        *NewGameObject(id, x, y, width, height, math.Atan2(float64(vy), float64(vx)), w, im, false),
 			vx:                vx,
 			vy:                vy,
 			stayWithinCamera:  false,

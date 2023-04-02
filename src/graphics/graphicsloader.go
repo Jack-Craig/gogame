@@ -35,6 +35,15 @@ const (
 	UserClydeTile // 10
 	UserModyTile
 	UserFrankTile
+	UserIdleFrame1
+	UserIdleFrame2
+	UserIdleFrame3 // 15
+	UserWalkFrame1
+	UserWalkFrame2
+	UserWalkFrame3
+	UserWalkFrame4
+	UserWalkFrame5
+	UserWalkFrame6 // 21
 	Final
 )
 
@@ -125,6 +134,14 @@ func NewGraphicsDataLoader() *GraphicsDataLoader {
 	}
 	gdl.fontSmall = fontSmall
 	return gdl
+}
+
+func (gdl *GraphicsDataLoader) GenerateAnimation(frameStart, frameEnd SpriteID) *Animation {
+	var frames []SpriteID
+	for cur := frameStart; cur <= frameEnd; cur++ {
+		frames = append(frames, cur)
+	}
+	return NewAnimation(gdl, frames)
 }
 
 func (gdl *GraphicsDataLoader) GetOverlay() *ebiten.Image {

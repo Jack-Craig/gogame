@@ -56,6 +56,8 @@ func NewWorld(handler Handler) *World {
 		player.x = PLAYERWORLDSTARTX
 		player.y = PLAYERWORLDSTARTX
 		player.shouldRemove = false
+		player.walkAnimation = *w.gdl.GenerateAnimation(graphics.UserWalkFrame1, graphics.UserWalkFrame6)
+		player.idleAnimation = *w.gdl.GenerateAnimation(graphics.UserIdleFrame1, graphics.UserIdleFrame3)
 		w.gameObjects = append(w.gameObjects, &player.GameObject)
 		w.entityObjects = append(w.entityObjects, &player.Entity)
 		w.playerObjects = append(w.playerObjects, player)
@@ -149,17 +151,6 @@ func (w *World) Update() {
 					break
 				}
 			}
-			/**
-			// Top left
-			topLeft := ei.x >= ej.x && ei.x <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height
-			// Top right
-			topRight := ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y >= ej.y && ei.y <= ej.y+ej.height
-			// Bottom left
-			bottomLeft := ei.x > ej.x && ei.x <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height
-			// Bottom right
-			bottomRight := ei.x+ei.width >= ej.x && ei.x+ei.width <= ej.x+ej.width && ei.y+ei.height >= ej.y && ei.y+ei.height <= ej.y+ej.height
-			isCollision := topLeft || topRight || bottomLeft || bottomRight
-			*/
 			if isCollision {
 				ei.collidingEntities = append(ei.collidingEntities, ej)
 				ej.collidingEntities = append(ej.collidingEntities, ei)
@@ -211,9 +202,11 @@ func (w *World) Draw(screen *ebiten.Image) {
 	for _, gobj := range w.gameObjects {
 		gobj.Draw(screen)
 	}
-	for _, playerObj := range w.playerObjects {
-		playerObj.Draw(screen)
-		w.DrawPlayerInfo(playerObj, screen)
+	for _, entity := range w.entityObjects {
+		entity.Draw(screen)
+	}
+	for x, playerObj := range w.playerObjects {
+		w.DrawPlayerInfo(x+1, playerObj, screen)
 	}
 	w.camera.Draw(screen)
 }
@@ -239,9 +232,9 @@ func (w *World) worldToBuffer(x, y float32) (uint32, uint32) {
 }
 
 // Should probably be moved to player object? But is a UI elem so idk
-func (w *World) DrawPlayerInfo(player *Player, screen *ebiten.Image) {
+func (w *World) DrawPlayerInfo(x int, player *Player, screen *ebiten.Image) {
 	renderY := int(w.camera.screenHeight)
-	renderX := int(w.camera.screenWidth * (float32(player.id) / float32(len(w.playerObjects)+1)))
+	renderX := int(w.camera.screenWidth * (float32(x) / float32(len(w.playerObjects)+1)))
 
 	// Render player info background thing
 	bo := w.gdl.GetSpriteImage(graphics.PlayerInfo)

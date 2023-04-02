@@ -88,7 +88,8 @@ func NewMenuState() *MenuState {
 func (ms *MenuState) GetNextState() GameState {
 	if ms.readyForNextState {
 		for _, data := range ms.playerData {
-			ms.players = append(ms.players, NewPlayer(data.id+1, data.name, nil, data.im, data.pi))
+			p := NewPlayer(data.id, data.name, nil, data.im, data.pi)
+			ms.players = append(ms.players, p)
 		}
 		return NewPlayState(ms.Handler)
 	}
