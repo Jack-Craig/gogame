@@ -3,6 +3,7 @@ package gameplay
 import (
 	"math"
 	"math/rand"
+	"time"
 
 	"github.com/Jack-Craig/gogame/src/graphics"
 )
@@ -16,6 +17,7 @@ func NewZombie(x, y float32, world *World, ai ZombieAI) *Zombie {
 	z := &Zombie{}
 	ai.Init(z)
 	z.zai = ai
+	z.health = 100
 	z.GameObject = *NewGameObject(10, x, y, TILEWIDTH-1, TILEWIDTH-1, 0, world, world.gdl.GetSpriteImage(graphics.Bullet), true)
 	z.facingDir.X = 1
 	z.gravityMultiplier = 1
@@ -34,11 +36,15 @@ type ZombieAI interface {
 }
 
 type BaseZombieAI struct {
+	ZombieAI
 	z               *Zombie
 	p               *Player
 	speed           float32
 	hearingDistance float32
-	ZombieAI
+	attackDistance  float64
+
+	attackCooldown int64
+	lastAttack     int64
 }
 
 func NewBaseZombie(x, y float32, w *World) *Zombie {
@@ -47,6 +53,8 @@ func NewBaseZombie(x, y float32, w *World) *Zombie {
 
 func (zai *BaseZombieAI) Init(z *Zombie) {
 	zai.z = z
+	zai.attackDistance = float64(TILEWIDTH / 2)
+	zai.attackCooldown = 1000
 	zai.speed = 1.5 + float32((rand.Int()%100))/75
 	zai.hearingDistance = 10*TILEWIDTH + float32((rand.Int() % (8 * int(TILEWIDTH))))
 }
@@ -72,13 +80,25 @@ func (zai *BaseZombieAI) Update() {
 	if zai.p == nil {
 		return
 	}
-	dx := zai.z.x - zai.p.x
-	if dx < 0 {
+	dx := float64(zai.z.x - zai.p.x)
+	dy := math.Abs(float64(zai.z.y - zai.p.y))
+	if dx < -zai.attackDistance {
 		zai.z.vx = zai.speed
-	} else if dx > 0 {
+	} else if dx > zai.attackDistance {
 		zai.z.vx = -zai.speed
 	} else {
 		zai.z.vx = 0
+		// Try attack
+		if dy < float64(TILEWIDTH/2) {
+			timeNow := time.Now().UnixMilli()
+			if zai.lastAttack == 0 {
+				zai.lastAttack = timeNow
+			}
+			if timeNow > zai.lastAttack+zai.attackCooldown {
+				zai.p.health -= 25
+				zai.lastAttack = timeNow
+			}
+		}
 	}
 
 }

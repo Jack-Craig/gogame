@@ -256,7 +256,7 @@ func (p *Player) Shoot() {
 		bulletSpeed := float32(30)
 
 		p.lastShotTime = curTime
-		p := NewBullet(p.x+p.width/2, p.y+p.height/3, xDir*bulletSpeed, yDir*bulletSpeed, 10, p.w)
+		p := NewBullet(p.x+p.width/2, p.y+p.height/3, xDir*bulletSpeed, yDir*bulletSpeed, 25, p.w)
 		p.w.AddProjectile(p)
 	}
 }
@@ -273,7 +273,7 @@ func NewProjectile(id uint32, x, y, width, height, vx, vy, damage float32, w *Wo
 			vx:                vx,
 			vy:                vy,
 			stayWithinCamera:  false,
-			health:            0,
+			health:            1,
 			collidingEntities: nil,
 			immuneToGuns:      true,
 		},
@@ -292,7 +292,7 @@ func (p *Projectile) Update() {
 		if e.immuneToGuns {
 			continue
 		}
-		e.shouldRemove = true
+		e.health -= p.damage
 		p.shouldRemove = true
 	}
 }

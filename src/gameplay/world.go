@@ -9,6 +9,7 @@ import (
 	"github.com/Jack-Craig/gogame/src/graphics"
 	"github.com/aquilax/go-perlin"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/text"
 )
 
@@ -30,6 +31,7 @@ const (
 	PLAYERWORLDSTARTX float32 = TILEWIDTH
 	PLAYERWORLDSTARTY float32 = TILEWIDTH * float32(WORLDBUFFERHEIGHT-20)
 	TOTALTILES        uint32  = 4
+	zombieWallM       float64 = .25
 )
 
 type World struct {
@@ -44,8 +46,8 @@ type World struct {
 	worldTiles                             [WORLDBUFFERHEIGHT][WORLDBUFFERLEN]*Tile
 	inited, canLeave, allPlayersDoneOrDead bool
 	bg                                     *Background
-
-	level *Level
+	level                                  *Level
+	zombieWallX                            float64
 }
 
 func NewWorld(handler Handler) *World {
@@ -56,6 +58,7 @@ func NewWorld(handler Handler) *World {
 		player.x = PLAYERWORLDSTARTX
 		player.y = PLAYERWORLDSTARTX
 		player.shouldRemove = false
+		player.health = 100
 		player.walkAnimation = *w.gdl.GenerateAnimation(graphics.UserWalkFrame1, graphics.UserWalkFrame6)
 		player.idleAnimation = *w.gdl.GenerateAnimation(graphics.UserIdleFrame1, graphics.UserIdleFrame3)
 		w.gameObjects = append(w.gameObjects, &player.GameObject)
@@ -112,10 +115,19 @@ func (w *World) Update() {
 		}
 	}
 	for i, entity := range w.entityObjects {
+		if entity.health <= 0 {
+			entity.shouldRemove = true
+		}
 		if entity.shouldRemove {
 			common.Remove(&w.entityObjects, i)
 			continue
 		}
+
+		furthestRight := float64(entity.x + entity.width)
+		if furthestRight <= w.zombieWallX-float64(TILEWIDTH*float32(WORLDBUFFERHEIGHT)-entity.y)*zombieWallM {
+			entity.health = 0
+		}
+
 		entity.AddVel(0, w.gravity*entity.gravityMultiplier)
 		entity.Update()
 		entity.collidingEntities = nil
@@ -158,6 +170,7 @@ func (w *World) Update() {
 
 		}
 	}
+	w.zombieWallX += (.05 * float64(TILEWIDTH))
 }
 func (w *World) AddEntity(e *Entity) {
 	e.w = w
@@ -208,6 +221,9 @@ func (w *World) Draw(screen *ebiten.Image) {
 	for x, playerObj := range w.playerObjects {
 		w.DrawPlayerInfo(x+1, playerObj, screen)
 	}
+	y := float64(TILEWIDTH * float32(WORLDBUFFERHEIGHT))
+	x2 := zombieWallM * y
+	ebitenutil.DrawLine(screen, w.zombieWallX+float64(w.camera.offX), float64(w.camera.offY)+y, w.zombieWallX-x2+float64(w.camera.offX), 0, color.Black)
 	w.camera.Draw(screen)
 }
 
